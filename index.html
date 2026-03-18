@@ -3407,7 +3407,7 @@ async function syncBuscarPC(){
 }
 
 async function syncConfirmar(){
-  if(!_syncIP){return;}
+  if(!_syncIP && !_syncBaseUrl){toast('⚠ Sin conexión al PC','e');return;}
   document.getElementById('sync-btn-ok').style.display='none';
   document.getElementById('sync-btn-buscar').style.display='none';
   _syncSet('⏳','Sincronizando...','Descargando alumnos del PC','scan');
