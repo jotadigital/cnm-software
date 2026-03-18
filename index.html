@@ -316,6 +316,7 @@ textarea.fi{resize:none;min-height:75px}
 .sbtn:active{background:#6B4F0A;transform:scale(.93)}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsqr/1.4.0/jsQR.min.js"></script>
 </head>
 <body>
 
@@ -3245,24 +3246,11 @@ function _syncSet(icono, titulo, sub, tipo=''){
 
 async function _pingPC(ip){
   try{
-    // Paso 1: /hello sin token — detectar si el PC tiene CNM corriendo
-    // Este endpoint es publico y evita el bloqueo Mixed Content HTTPS->HTTP
-    const r=await fetch(`http://${ip}:${SYNC_PORT}/hello`,{
-      mode:'no-cors',  // no-cors evita bloqueo Mixed Content
+    const r=await fetch(`http://${ip}:${SYNC_PORT}/ping`,{
+      headers:{'X-CNM-Token':SYNC_TOKEN},
       signal:AbortSignal.timeout(SYNC_TIMEOUT)
     });
-    // no-cors siempre retorna opaque response (status 0) si llego
-    // Si no lanzo excepcion, el servidor existe
-    // Paso 2: ahora hacer /ping con token para obtener datos reales
-    try{
-      const r2=await fetch(`http://${ip}:${SYNC_PORT}/ping`,{
-        headers:{'X-CNM-Token':SYNC_TOKEN},
-        signal:AbortSignal.timeout(SYNC_TIMEOUT*2)
-      });
-      if(r2.ok) return await r2.json();
-    }catch(e2){}
-    // Si /ping fallo pero /hello respondio, igual es un PC CNM
-    return {status:'ok',colegio:'CNM PC',ultimo_updated_at:''};
+    if(r.ok) return await r.json();
   }catch(e){}
   return null;
 }
@@ -3354,8 +3342,9 @@ async function syncConfirmar(){
       (a.updated_at&&a.updated_at>mx)?a.updated_at:mx,'1970-01-01T00:00:00');
 
     // Pull del PC
+    const _pullBase=_syncBaseUrl||`http://${_syncIP}:${SYNC_PORT}`;
     const r=await fetch(
-      `http://${_syncIP}:${SYNC_PORT}/pull?desde=${encodeURIComponent(ultimoLocal)}`,
+      `${_pullBase}/pull?desde=${encodeURIComponent(ultimoLocal)}`,
       {headers:{'X-CNM-Token':SYNC_TOKEN},signal:AbortSignal.timeout(30000)}
     );
     if(!r.ok) throw new Error(`Error del servidor: ${r.status}`);
@@ -3401,8 +3390,97 @@ async function syncConfirmar(){
   }
 }
 
+let _syncBaseUrl = null;
+let _qrStream = null;
+let _qrAnimFrame = null;
+
+function abrirEscanerQR(){
+  const wrap = document.getElementById('qr-scanner-wrap');
+  const video = document.getElementById('qr-video');
+  wrap.style.display = 'block';
+  navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}})
+    .then(stream=>{
+      _qrStream = stream;
+      video.srcObject = stream;
+      video.play();
+      _scanearFrame();
+    })
+    .catch(e=>{
+      wrap.style.display='none';
+      toast('⚠ No se pudo acceder a la cámara: '+e.message,'e');
+    });
+}
+
+function cerrarEscanerQR(){
+  if(_qrStream){ _qrStream.getTracks().forEach(t=>t.stop()); _qrStream=null; }
+  if(_qrAnimFrame){ cancelAnimationFrame(_qrAnimFrame); _qrAnimFrame=null; }
+  document.getElementById('qr-scanner-wrap').style.display='none';
+}
+
+function _scanearFrame(){
+  const video = document.getElementById('qr-video');
+  const canvas = document.getElementById('qr-canvas');
+  if(!video.videoWidth){ _qrAnimFrame=requestAnimationFrame(_scanearFrame); return; }
+  canvas.width=video.videoWidth; canvas.height=video.videoHeight;
+  const ctx=canvas.getContext('2d');
+  ctx.drawImage(video,0,0,canvas.width,canvas.height);
+  try{
+    const img=ctx.getImageData(0,0,canvas.width,canvas.height);
+    if(window.jsQR){
+      const code=jsQR(img.data,img.width,img.height,{inversionAttempts:'dontInvert'});
+      if(code&&code.data&&code.data.startsWith('http')){
+        cerrarEscanerQR();
+        const url=code.data.trim();
+        document.getElementById('sync-url-manual').value=url;
+        localStorage.setItem('cnm_sync_url',url);
+        toast('✓ QR leído — conectando…','s');
+        setTimeout(()=>syncConUrl(),500);
+        return;
+      }
+    }
+  }catch(e){}
+  _qrAnimFrame=requestAnimationFrame(_scanearFrame);
+}
+
+async function syncConUrl(){
+  const url=(document.getElementById('sync-url-manual').value||'').trim();
+  if(!url){toast('⚠ Ingresa la URL del túnel','e');return;}
+  const base=url.replace(/\/+$/,'');
+  _syncSet('⏳','Conectando al PC...','Verificando URL...','scan');
+  document.getElementById('sync-btn-ok').style.display='none';
+  document.getElementById('sync-pc-info').style.display='none';
+  document.getElementById('sync-error-info').style.display='none';
+  try{
+    const r=await fetch(base+'/ping',{
+      headers:{'X-CNM-Token':SYNC_TOKEN},
+      signal:AbortSignal.timeout(8000)
+    });
+    if(r.ok){
+      const data=await r.json();
+      _syncBaseUrl=base;
+      document.getElementById('sync-pc-nombre').textContent=data.colegio||'CNM PC';
+      document.getElementById('sync-pc-ip').textContent=base;
+      document.getElementById('sync-pc-ultimo').textContent=
+        data.ultimo_updated_at?'Último: '+data.ultimo_updated_at.substring(0,16).replace('T',' ')+'h':'';
+      document.getElementById('sync-pc-info').style.display='block';
+      document.getElementById('sync-btn-ok').style.display='block';
+      _syncSet('✅','PC encontrado vía túnel','Confirma para sincronizar','ok');
+      localStorage.setItem('cnm_sync_url',base);
+    }else{
+      _syncSet('❌','No autorizado','Verifica que la app PC esté abierta','err');
+    }
+  }catch(e){
+    _syncSet('❌','No se pudo conectar','Verifica la URL e intenta de nuevo','err');
+    document.getElementById('sync-error-info').style.display='block';
+    document.getElementById('sync-error-info').textContent='Error: '+(e.message||'timeout');
+    document.getElementById('sync-btn-buscar').style.display='block';
+  }
+}
+
 async function openSyncWifi(){
   openM('msync');
+  const savedUrl=localStorage.getItem('cnm_sync_url');
+  if(savedUrl){ const inp=document.getElementById('sync-url-manual'); if(inp) inp.value=savedUrl; }
   await syncBuscarPC();
 }
 
