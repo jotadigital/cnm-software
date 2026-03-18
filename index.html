@@ -1054,15 +1054,19 @@ textarea.fi{resize:none;min-height:75px}
    <!-- Codigo 4 digitos -->
    <div style="background:#FDF3DC;border-radius:12px;padding:16px;margin-bottom:10px;border:1px solid #C9A84C;text-align:center">
     <div style="font-size:11px;font-weight:700;color:#8B6914;margin-bottom:10px;letter-spacing:.5px">🔗 INGRESA EL CÓDIGO DEL PC</div>
-    <div style="display:flex;gap:8px;justify-content:center;margin-bottom:12px" id="sync-digitos">
+    <div style="display:flex;gap:6px;justify-content:center;margin-bottom:12px" id="sync-digitos">
      <input type="tel" maxlength="1" class="sync-dig" oninput="syncDigito(this,0)" onkeydown="syncBack(event,this,0)"
-      style="width:52px;height:60px;text-align:center;font-size:28px;font-weight:900;font-family:Consolas,monospace;background:#fff;border:2.5px solid #C9A84C;border-radius:10px;outline:none;color:#8B6914">
+      style="width:42px;height:54px;text-align:center;font-size:24px;font-weight:900;font-family:Consolas,monospace;background:#fff;border:2.5px solid #C9A84C;border-radius:10px;outline:none;color:#8B6914">
      <input type="tel" maxlength="1" class="sync-dig" oninput="syncDigito(this,1)" onkeydown="syncBack(event,this,1)"
-      style="width:52px;height:60px;text-align:center;font-size:28px;font-weight:900;font-family:Consolas,monospace;background:#fff;border:2.5px solid #C9A84C;border-radius:10px;outline:none;color:#8B6914">
+      style="width:42px;height:54px;text-align:center;font-size:24px;font-weight:900;font-family:Consolas,monospace;background:#fff;border:2.5px solid #C9A84C;border-radius:10px;outline:none;color:#8B6914">
      <input type="tel" maxlength="1" class="sync-dig" oninput="syncDigito(this,2)" onkeydown="syncBack(event,this,2)"
-      style="width:52px;height:60px;text-align:center;font-size:28px;font-weight:900;font-family:Consolas,monospace;background:#fff;border:2.5px solid #C9A84C;border-radius:10px;outline:none;color:#8B6914">
+      style="width:42px;height:54px;text-align:center;font-size:24px;font-weight:900;font-family:Consolas,monospace;background:#fff;border:2.5px solid #C9A84C;border-radius:10px;outline:none;color:#8B6914">
      <input type="tel" maxlength="1" class="sync-dig" oninput="syncDigito(this,3)" onkeydown="syncBack(event,this,3)"
-      style="width:52px;height:60px;text-align:center;font-size:28px;font-weight:900;font-family:Consolas,monospace;background:#fff;border:2.5px solid #C9A84C;border-radius:10px;outline:none;color:#8B6914">
+      style="width:42px;height:54px;text-align:center;font-size:24px;font-weight:900;font-family:Consolas,monospace;background:#fff;border:2.5px solid #C9A84C;border-radius:10px;outline:none;color:#8B6914">
+     <input type="tel" maxlength="1" class="sync-dig" oninput="syncDigito(this,4)" onkeydown="syncBack(event,this,4)"
+      style="width:42px;height:54px;text-align:center;font-size:24px;font-weight:900;font-family:Consolas,monospace;background:#fff;border:2.5px solid #C9A84C;border-radius:10px;outline:none;color:#8B6914">
+     <input type="tel" maxlength="1" class="sync-dig" oninput="syncDigito(this,5)" onkeydown="syncBack(event,this,5)"
+      style="width:42px;height:54px;text-align:center;font-size:24px;font-weight:900;font-family:Consolas,monospace;background:#fff;border:2.5px solid #C9A84C;border-radius:10px;outline:none;color:#8B6914">
     </div>
     <button onclick="syncConCodigo()" style="width:100%;background:#8B6914;color:#fff;border:none;border-radius:10px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:Rajdhani,sans-serif">
      🔗 CONECTAR CON CÓDIGO
@@ -1090,7 +1094,8 @@ textarea.fi{resize:none;min-height:75px}
   <div class="mftr" style="gap:8px">
    <button class="bg" style="flex:1" onclick="closeM('msync')">Cerrar</button>
    <button id="sync-btn-buscar" class="bp" style="flex:1;background:#2ecc71;display:none" onclick="syncBuscarPC()">🔍 Buscar de nuevo</button>
-   <button id="sync-btn-ok" class="bp" style="flex:2;background:#2ecc71;display:none" onclick="syncConfirmar()">↕ SINCRONIZAR AHORA</button>
+   <button id="sync-btn-ok" class="bp" style="flex:2;background:#2ecc71;display:none" onclick="syncConfirmar()">⬇ PC → CELULAR</button>
+   <button id="sync-btn-push" class="bp" style="flex:2;background:#1F6FEB;display:none" onclick="syncPush()">⬆ CELULAR → PC</button>
   </div>
  </div>
 </div>
@@ -3355,6 +3360,7 @@ async function syncBuscarPC(){
   document.getElementById('sync-error-info').style.display='none';
   document.getElementById('sync-resultado').style.display='none';
   document.getElementById('sync-btn-ok').style.display='none';
+  document.getElementById('sync-btn-push')?.style && (document.getElementById('sync-btn-push').style.display='none');
   document.getElementById('sync-btn-buscar').style.display='none';
   _syncSet('📡','Buscando PC en la red...','Esto puede tomar hasta 15 segundos','scan');
 
@@ -3404,6 +3410,46 @@ async function syncBuscarPC(){
     '3. El firewall de Windows puede bloquear la conexión<br>'+
     '<span style="font-size:11px;color:#888">Si el problema persiste, usa Importar BD (manual)</span>';
   document.getElementById('sync-btn-buscar').style.display='block';
+}
+
+async function syncPush(){
+  if(!_syncIP && !_syncBaseUrl){toast('⚠ Sin conexión al PC','e');return;}
+  document.getElementById('sync-btn-ok').style.display='none';
+  document.getElementById('sync-btn-push').style.display='none';
+  document.getElementById('sync-btn-buscar').style.display='none';
+  _syncSet('⏳','Subiendo al PC...','Enviando alumnos del celular al PC','scan');
+  try{
+    const todos=await iall('alumnos');
+    const activos=todos.filter(a=>!a.deleted);
+    if(!activos.length){
+      _syncSet('⚠','Sin alumnos','No hay alumnos para subir al PC','warn');
+      document.getElementById('sync-btn-buscar').style.display='block';
+      return;
+    }
+    const _pushBase=_syncBaseUrl||`http://${_syncIP}:${SYNC_PORT}`;
+    const r=await fetch(`${_pushBase}/push`,{
+      method:'POST',
+      headers:{'X-CNM-Token':SYNC_TOKEN,'Content-Type':'application/json'},
+      body:JSON.stringify({registros:activos}),
+      signal:AbortSignal.timeout(60000)
+    });
+    if(!r.ok) throw new Error(`Error del servidor: ${r.status}`);
+    const data=await r.json();
+    const ins=data.insertados||0, upd=data.actualizados||0;
+    _syncSet('✅','Subida completa','','ok');
+    document.getElementById('sync-resultado').style.display='block';
+    document.getElementById('sync-resultado').innerHTML=
+      `<strong>${ins+upd} alumnos enviados al PC</strong><br>`+
+      `<span style="font-size:11px">${ins} nuevos · ${upd} actualizados</span>`;
+    document.getElementById('sync-btn-buscar').style.display='block';
+    agMarcar();
+    toast(`✓ ${ins+upd} alumnos subidos al PC`,'s');
+  }catch(e){
+    _syncSet('❌','Error al subir',e.message||'Verifica conexión','err');
+    document.getElementById('sync-error-info').style.display='block';
+    document.getElementById('sync-error-info').textContent='Error: '+(e.message||'timeout');
+    document.getElementById('sync-btn-buscar').style.display='block';
+  }
 }
 
 async function syncConfirmar(){
@@ -3474,7 +3520,7 @@ function syncDigito(el, idx){
   if(el.value && idx < 3) digs[idx+1].focus();
   // Auto-conectar cuando se completan 4 digitos
   const codigo = Array.from(digs).map(d=>d.value).join('');
-  if(codigo.length===4) setTimeout(()=>syncConCodigo(),300);
+  if(codigo.length===6) setTimeout(()=>syncConCodigo(),300);
 }
 
 function syncBack(e, el, idx){
@@ -3486,7 +3532,7 @@ function syncBack(e, el, idx){
 async function syncConCodigo(){
   const digs = document.querySelectorAll('.sync-dig');
   const codigo = Array.from(digs).map(d=>d.value).join('');
-  if(codigo.length<4){toast('⚠ Ingresa los 4 dígitos','e');return;}
+  if(codigo.length<6){toast('⚠ Ingresa los 6 dígitos','e');return;}
   _syncSet('⏳','Buscando PC...','Obteniendo URL del código '+codigo,'scan');
   document.getElementById('sync-btn-ok').style.display='none';
   document.getElementById('sync-pc-info').style.display='none';
@@ -3527,7 +3573,8 @@ async function syncConCodigo(){
           data.ultimo_updated_at?'Último: '+data.ultimo_updated_at.substring(0,16).replace('T',' ')+'h':'';
         document.getElementById('sync-pc-info').style.display='block';
         document.getElementById('sync-btn-ok').style.display='block';
-        _syncSet('✅','PC encontrado','Confirma para sincronizar','ok');
+        document.getElementById('sync-btn-push').style.display='block';
+        _syncSet('✅','PC encontrado — elige dirección','ok');
         localStorage.setItem('cnm_sync_url',url);
         localStorage.setItem('cnm_sync_codigo',codigo);
       }else{
@@ -3569,7 +3616,8 @@ async function syncConUrl(){
         data.ultimo_updated_at?'Último: '+data.ultimo_updated_at.substring(0,16).replace('T',' ')+'h':'';
       document.getElementById('sync-pc-info').style.display='block';
       document.getElementById('sync-btn-ok').style.display='block';
-      _syncSet('✅','PC encontrado','Confirma para sincronizar','ok');
+      document.getElementById('sync-btn-push').style.display='block';
+      _syncSet('✅','PC encontrado — elige dirección sync','ok');
       localStorage.setItem('cnm_sync_url',base);
     }else{
       _syncSet('❌','No autorizado','Verifica que la app PC esté abierta','err');
@@ -3586,7 +3634,7 @@ async function openSyncWifi(){
   openM('msync');
   // Restaurar ultimo codigo usado
   const savedCodigo=localStorage.getItem('cnm_sync_codigo');
-  if(savedCodigo&&savedCodigo.length===4){
+  if(savedCodigo&&savedCodigo.length===6){
     const digs=document.querySelectorAll('.sync-dig');
     savedCodigo.split('').forEach((d,i)=>{if(digs[i])digs[i].value=d;});
   }
