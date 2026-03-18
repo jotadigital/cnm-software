@@ -3497,8 +3497,7 @@ async function syncConCodigo(){
       signal:AbortSignal.timeout(8000)
     });
     const texto=await r.text();
-    const lineas=texto.trim().split('
-').filter(Boolean);
+    const lineas=texto.trim().split('\n').filter(Boolean);
     if(!lineas.length){
       _syncSet('❌','Código no encontrado','Verifica el código del PC e intenta de nuevo','err');
       document.getElementById('sync-error-info').style.display='block';
