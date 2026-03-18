@@ -3433,7 +3433,11 @@ async function syncPush(){
       body:JSON.stringify({registros:activos}),
       signal:AbortSignal.timeout(60000)
     });
-    if(!r.ok) throw new Error(`Error del servidor: ${r.status}`);
+    if(!r.ok){
+      let errTxt='';
+      try{errTxt=await r.text();}catch(_){}
+      throw new Error(`Error ${r.status}: ${errTxt||'servidor no respondio'}`);
+    }
     const data=await r.json();
     const ins=data.insertados||0, upd=data.actualizados||0;
     _syncSet('✅','Subida completa','','ok');
@@ -3445,10 +3449,18 @@ async function syncPush(){
     agMarcar();
     toast(`✓ ${ins+upd} alumnos subidos al PC`,'s');
   }catch(e){
-    _syncSet('❌','Error al subir',e.message||'Verifica conexión','err');
+    // Intentar obtener mensaje del servidor si es un error HTTP
+    let errMsg = e.message||'timeout';
+    try{
+      if(e.response) errMsg = await e.response.text();
+    }catch(_){}
+    _syncSet('❌','Error al subir',errMsg,'err');
     document.getElementById('sync-error-info').style.display='block';
-    document.getElementById('sync-error-info').textContent='Error: '+(e.message||'timeout');
+    document.getElementById('sync-error-info').textContent='Error: '+errMsg;
+    document.getElementById('sync-btn-ok').style.display='block';
+    document.getElementById('sync-btn-push').style.display='block';
     document.getElementById('sync-btn-buscar').style.display='block';
+    toast('⚠ Error: '+errMsg,'e');
   }
 }
 
