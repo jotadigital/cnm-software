@@ -1207,18 +1207,32 @@ const DCFG={
 
 // ─── ADMIN MASTER DB ──────────────────────────────
 let dbAdmin=null;
-function openAdminDB(){
+function openAdminDB(intento=1){
   return new Promise((res,rej)=>{
-    const r=indexedDB.open(DBN_ADMIN,1);
-    r.onupgradeneeded=e=>{
-      const d=e.target.result;
-      if(!d.objectStoreNames.contains('usuarios')){
-        const s=d.createObjectStore('usuarios',{keyPath:'id',autoIncrement:true});
-        s.createIndex('usuario','usuario',{unique:true});
-      }
-    };
-    r.onsuccess=e=>{dbAdmin=e.target.result;res(dbAdmin)};
-    r.onerror=e=>rej(e);
+    try{
+      const r=indexedDB.open(DBN_ADMIN,1);
+      r.onupgradeneeded=e=>{
+        try{
+          const d=e.target.result;
+          if(!d.objectStoreNames.contains('usuarios')){
+            const s=d.createObjectStore('usuarios',{keyPath:'id',autoIncrement:true});
+            s.createIndex('usuario','usuario',{unique:true});
+          }
+        }catch(ex){console.warn('upgrade error:',ex);}
+      };
+      r.onsuccess=e=>{dbAdmin=e.target.result;res(dbAdmin)};
+      r.onerror=e=>{
+        console.warn(`openAdminDB intento ${intento} fallo:`,e.target.error);
+        if(intento<4){setTimeout(()=>openAdminDB(intento+1).then(res).catch(rej),400*intento);}
+        else{rej(e.target.error||new Error('IndexedDB no disponible'));}
+      };
+      r.onblocked=()=>{
+        if(intento<4){setTimeout(()=>openAdminDB(intento+1).then(res).catch(rej),400*intento);}
+      };
+    }catch(ex){
+      if(intento<4){setTimeout(()=>openAdminDB(intento+1).then(res).catch(rej),400*intento);}
+      else{rej(ex);}
+    }
   });
 }
 const txA=(st,m='readonly')=>dbAdmin.transaction(st,m).objectStore(st);
@@ -1234,13 +1248,23 @@ async function getUsuarioPorNombre(nombre){
   });
 }
 async function asegurarAdminMaestro(){
-  const todos=await iallA('usuarios');
-  if(!todos.length){
-    await iputA('usuarios',{
-      usuario:'admin', password:'0000',
-      nombre_colegio:'ADMINISTRADOR',
-      esAdmin:true, creado:new Date().toISOString()
-    });
+  for(let i=0;i<3;i++){
+    try{
+      const todos=await iallA('usuarios');
+      const tieneAdmin=todos.some(u=>u.usuario==='admin');
+      if(!tieneAdmin){
+        await iputA('usuarios',{
+          usuario:'admin', password:'0000',
+          nombre_colegio:'ADMINISTRADOR',
+          esAdmin:true, creado:new Date().toISOString()
+        });
+        console.log('Admin creado en intento '+(i+1));
+      }
+      return;
+    }catch(e){
+      console.warn('asegurarAdmin intento '+(i+1)+' error:',e);
+      await new Promise(r=>setTimeout(r,300*(i+1)));
+    }
   }
 }
 async function listarUsuarios(){ return await iallA('usuarios'); }
@@ -3075,14 +3099,34 @@ async function login(){
   const u=document.getElementById('lu').value.trim();
   const p=document.getElementById('lp').value.trim();
   const msg=document.getElementById('lmsg');
-  msg.textContent='⏳ Verificando…';
+  msg.style.color='#C9A84C';
+  msg.textContent='⏳ Iniciando…';
   try{
-    if(!dbAdmin) await openAdminDB();
+    if(!dbAdmin){
+      msg.textContent='⏳ Abriendo base de datos…';
+      for(let i=0;i<3;i++){
+        try{await openAdminDB();break;}
+        catch(e){
+          await new Promise(r=>setTimeout(r,400*(i+1)));
+          if(i===2) throw new Error('No se pudo abrir la base de datos. Toca Actualizar app.');
+        }
+      }
+    }
+    msg.textContent='⏳ Preparando…';
     await asegurarAdminMaestro();
+    await new Promise(r=>setTimeout(r,500));
+    msg.textContent='⏳ Verificando…';
     const usr=await getUsuarioPorNombre(u);
-    if(!usr||usr.password!==p){
+    if(!usr){
+      const todos=await iallA('usuarios');
       msg.style.color='#ff6b6b';
-      msg.textContent='⚠ Usuario o contraseña incorrectos';
+      msg.textContent=todos.length===0?'⚠ BD vacía — toca Restablecer acceso':`⚠ Usuario "${u}" no encontrado`;
+      document.getElementById('lp').value='';
+      return;
+    }
+    if(usr.password!==p){
+      msg.style.color='#ff6b6b';
+      msg.textContent='⚠ Contraseña incorrecta';
       document.getElementById('lp').value='';
       document.getElementById('lp').focus();
       return;
@@ -3092,7 +3136,7 @@ async function login(){
       nombre_colegio:usr.nombre_colegio||'',
       esAdmin:!!usr.esAdmin,
       dbName:usr.esAdmin?'cnm_v4_admin':`${DBN_PREFIX}${usr.id}`,
-      _pwd:usr.password||'0000'  // para PIN por defecto
+      _pwd:usr.password||'0000'
     };
     db=null;
     await openDB(_usuarioActual.dbName);
@@ -3111,20 +3155,34 @@ async function login(){
     toast(`✓ Bienvenido ${usr.esAdmin?'[ADMIN] ':''}${u}`,'s');
   }catch(err){
     msg.style.color='#ff6b6b';
-    msg.textContent='⚠ Error: '+err.message;
+    msg.textContent='⚠ '+err.message;
     console.error('login error:',err);
   }
 }
 
 async function resetCredenciales(){
-  if(!confirm('¿Restablecer contraseña del admin a "0000"?'))return;
-  if(!dbAdmin) await openAdminDB();
-  const usr=await getUsuarioPorNombre('admin');
-  if(usr){usr.password='0000';await iputA('usuarios',usr);}
-  document.getElementById('lu').value='admin';
-  document.getElementById('lp').value='0000';
-  document.getElementById('lmsg').style.color='#4ade80';
-  document.getElementById('lmsg').textContent='✓ Restablecido · usuario: admin · clave: 0000';
+  if(!confirm('¿Restablecer acceso admin a "0000"?'))return;
+  const msg=document.getElementById('lmsg');
+  try{
+    if(!dbAdmin) await openAdminDB();
+    await new Promise(r=>setTimeout(r,300));
+    let usr=await getUsuarioPorNombre('admin');
+    if(usr){usr.password='0000';await iputA('usuarios',usr);}
+    else{
+      await iputA('usuarios',{
+        usuario:'admin',password:'0000',
+        nombre_colegio:'ADMINISTRADOR',
+        esAdmin:true,creado:new Date().toISOString()
+      });
+    }
+    document.getElementById('lu').value='admin';
+    document.getElementById('lp').value='0000';
+    msg.style.color='#4ade80';
+    msg.textContent='✓ Listo — usuario: admin · clave: 0000';
+  }catch(e){
+    msg.style.color='#ff6b6b';
+    msg.textContent='⚠ Error: '+e.message;
+  }
 }
 
 // ─── INIT ─────────────────────────────────────────
