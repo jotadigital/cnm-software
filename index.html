@@ -434,16 +434,18 @@ textarea.fi{resize:none;min-height:75px}
   <!-- TOPBAR -->
   <div id="topbar">
     <button id="hbtn" onclick="toggleSB()">☰</button>
-    <span id="user-badge" style="display:none;background:#E8F0FE;color:#1F6FEB;border:1px solid #1F6FEB;border-radius:20px;padding:3px 10px;font-size:11px;font-weight:700;font-family:'Rajdhani',sans-serif;flex-shrink:0;white-space:nowrap;max-width:110px;overflow:hidden;text-overflow:ellipsis"></span>
     <div id="logo-circle"><img src="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAUDBAQEAwUEBAQFBQUGBwwIBwcHBw8LCwkMEQ8SEhEPERETFhwXExQaFRERGCEYGh0dHx8fExciJCIeJBweHx7/2wBDAQUFBQcGBw4ICA4eFBEUHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh7/wAARCAAoAFADASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwD5CVakVM0IKsRoPStkiGxixZ7VIsHFbHhjQdV8Ra1a6Loenz3+oXTbYbeEZZiBk9eAAASScAAV3V78FPH1hb3E95Z6NEtsjPMp12zLqFBLfKJM5GDx1q7JEnmAg9qX7OPSu+8X/DjxV4O0Ww1rxF4eu4tNv0V7e6SeNojuUMoYpu2Eg5AbBNdDpXwg8b3rxR2fgKG8km0yPVI1/tobntnJCMArDkkY29faqailuSpNu1jx4wUxocdq9J8C+DdS8c67NougeB7y4vLdS1wsGpmHyADg7zOpVTnjBwSQfQ1meL/CUWk6TbaxZ3kk1rPM9u8FzGI7iCVGZWU7SVdcqcOpweOBmnGm535VtqyKleFNxU3bmdl5vscI0eKhda0JVqrKtZNGyYkdWYjVNWqeN6EwZ3/wy16Lw1q9jrNlIv22FpEuYWnEDyRMMDypD8oI64PU1p6hongG8+0zWuj+N2uZ97L8tnKvmNkjLK2SMnr1xXmisCpHqK6J/ErSLODouhqZrVLZitkBgKrLvHPDHfkn1VD1HPQ5wla8fudv0Zz+zqRb5Zaeav8Aqj1bUfFfjm/vLKHTdI1290ZtMisdS07U0jWG4C5zgFiBgHhuvrXRaj4ju7H7S9rqkvhxRoK6baNfa3YJJEyuzJwkzPtGRyAWyOleCXPiCeeW5kax0pPtHkgoljGFjETArtGOM4w394ZzVm78UG4kuXHh/wAO24uLVrUpb6eI1jUknemD8sn3QH6gKPVt2TS6GseZfE/6+9npkHxXu9J1G3u/+Ewg+0vL5+pHRNNZ1v7jYUEsryeWGwuMABhnmvNvGPiq71+QxlfKtVcsoZt8knPBZsAD12qAAfU81FqHiue8hu4n0nRYvtNvHblobIRtGEZiGUg8Md2Ce4A9K52SSmpNJpPcUoRk1JrVbeQ2U1UlPNSSSCq0jVDZokRg09XxRRUIoesuO9SCbFFFNMTQ4T0puKKKdxWGNP70xpSaKKTbHYjZ80xjRRSGf//Z" alt="CNM" style="width:100%;height:100%;object-fit:cover;border-radius:50%"></div>
-    <div class="top-names">
-      <div class="top-school" id="tschool">ESCUELA MARIO BAEZA</div>
-      <div class="top-sys">CNM Software · Sistema Escolar</div>
+    <div class="top-names" style="flex:1;min-width:0;overflow:hidden">
+      <div class="top-school" id="tschool" style="font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">ESCUELA MARIO BAEZA</div>
+      <div class="top-sys" style="font-size:10px;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">CNM Software · Sistema Escolar</div>
     </div>
-    <div id="stats-pill">— alumnos</div>
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex-shrink:0">
+      <div id="stats-pill" style="background:#FDF3DC;border:1px solid #C9A84C;border-radius:20px;padding:3px 10px;font-size:12px;font-weight:700;color:#8B6914;white-space:nowrap">— alumnos</div>
+      <span id="user-badge" style="display:none;background:#E8F0FE;color:#1F6FEB;border:1px solid #1F6FEB;border-radius:20px;padding:2px 8px;font-size:10px;font-weight:700;font-family:'Rajdhani',sans-serif;white-space:nowrap;max-width:120px;overflow:hidden;text-overflow:ellipsis"></span>
+    </div>
   </div>
 
-  <div id="layout">
+  <div id="layout"yout">
     <div id="ov" onclick="closeSB()"></div>
 
     <!-- SIDEBAR -->
@@ -500,7 +502,8 @@ textarea.fi{resize:none;min-height:75px}
           <input id="si" type="search" placeholder="Buscar por nombre, RUT o curso…"
                  oninput="buscar(this.value)" autocomplete="off" autocorrect="off">
         </div>
-        <button id="bnuevo" onclick="openFormProtegido(null)">＋ Nuevo</button>
+        <button onclick="buscar(document.getElementById('si').value)" style="background:#E8F0FE;color:#1F6FEB;border:1px solid #1F6FEB;border-radius:8px;padding:10px 12px;font-size:16px;cursor:pointer;flex-shrink:0" title="Actualizar lista">🔄</button>
+      <button id="bnuevo" onclick="openFormProtegido(null)">＋ Nuevo</button>
       </div>
 
       <div id="tarea">
