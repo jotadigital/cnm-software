@@ -398,7 +398,7 @@ textarea.fi{resize:none;min-height:75px}
     <button onclick="iniciarSistema()" style="width:100%;background:#8B6914;color:#fff;border:none;border-radius:10px;padding:15px;font-size:15px;font-weight:700;cursor:pointer;font-family:'Rajdhani',sans-serif;letter-spacing:.5px">
       → COMENZAR A USAR CNM
     </button>
-    <div style="text-align:center;font-size:10px;color:#aaa;margin-top:12px">CNM Software v57 · Esta pantalla solo aparece una vez</div>
+    <div style="text-align:center;font-size:10px;color:#aaa;margin-top:12px">CNM Software v58 · Esta pantalla solo aparece una vez</div>
   </div>
 </div>
 
@@ -527,7 +527,7 @@ textarea.fi{resize:none;min-height:75px}
         <span id="sbinst">ESCUELA MARIO BAEZA · Las Naciones 823, Maipú</span>
         <span id="sb-guard" style="display:flex;align-items:center;gap:5px;font-size:10px;color:#888">
           <span id="sb-dot" style="width:7px;height:7px;border-radius:50%;background:#888;display:inline-block;transition:background .4s"></span>
-          <span id="sb-txt">CNM v57</span>
+          <span id="sb-txt">CNM v58</span>
         </span>
       </div>
     </div>
@@ -1467,11 +1467,45 @@ async function verFicha(id){
   const fb=document.getElementById('fichabody');
   const foto=a.foto?`<img class="ficha-foto" src="${a.foto}" alt="foto">`
                    :`<div class="ficha-nofoto">📷</div>`;
+  // ── Alerta inteligente de salud ──
+  const _med = (a.medicamento||'').trim();
+  const _enf = (a.enfermedad_cronica||'').trim();
+  let _alertaHtml = '';
+  if(_med || _enf){
+    const _tipo = (_med && _enf) ? 'rojo' : (_med ? 'rojo' : 'amarillo');
+    const _titulo = (_med && _enf)
+      ? '⚠ Medicamento y condición de salud'
+      : (_med ? '💊 Alumno con medicamento' : '🩺 Enfermedad crónica registrada');
+    const _bg    = _tipo==='rojo' ? '#FCEBEB' : '#FAEEDA';
+    const _bdr   = _tipo==='rojo' ? '#F09595' : '#FAC775';
+    const _hbg   = _tipo==='rojo' ? '#F7C1C1' : '#FAC775';
+    const _tcol  = _tipo==='rojo' ? '#A32D2D' : '#854F0B';
+    const _icobg = _tipo==='rojo' ? '#E24B4A' : '#BA7517';
+    _alertaHtml = `
+    <div style="border-radius:10px;overflow:hidden;margin-bottom:12px;border:1px solid ${_bdr};background:${_bg}">
+      <div style="background:${_hbg};padding:10px 14px;display:flex;align-items:center;gap:10px">
+        <div style="width:28px;height:28px;border-radius:50%;background:${_icobg};color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0">!</div>
+        <div style="font-size:13px;font-weight:700;color:${_tcol}">${_titulo}</div>
+      </div>
+      <div style="padding:10px 14px;font-size:13px;color:#333;line-height:1.8">
+        ${_med?`<div style="display:flex;gap:8px"><span style="font-weight:700;color:${_tcol};min-width:110px;flex-shrink:0">Medicamento:</span><span>${esc(_med)}</span></div>`:''}
+        ${_enf?`<div style="display:flex;gap:8px"><span style="font-weight:700;color:${_tcol};min-width:110px;flex-shrink:0">Enf. crónica:</span><span>${esc(_enf)}</span></div>`:''}
+      </div>
+    </div>`;
+  } else {
+    _alertaHtml = `
+    <div style="border-radius:10px;background:#EAF3DE;border:1px solid #97C459;padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;gap:10px">
+      <div style="width:28px;height:28px;border-radius:50%;background:#3B6D11;color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0">✓</div>
+      <div style="font-size:13px;font-weight:700;color:#3B6D11">Sin alertas de salud</div>
+    </div>`;
+  }
+
   fb.innerHTML=`
     ${foto}
     <div class="fnombre">${esc(a.nombre||'—')}</div>
     <div class="frut">RUT: ${esc(a.rut||'—')}</div>
     <div><span class="fcurso">${esc(a.curso||'—')}</span></div>
+    ${_alertaHtml}
     <div class="icard" style="margin-top:12px">
       <div class="ictitle">DATOS PERSONALES</div>
       <div class="irow"><span class="ilbl">DIRECCIÓN</span><span class="ival">${esc(a.direccion||'—')}</span></div>
@@ -3240,7 +3274,7 @@ async function autoguardarSilencioso(){
     _agSetDot('ok');
     const hora=new Date().toLocaleTimeString('es-CL',{hour:'2-digit',minute:'2-digit'});
     document.getElementById('sb-txt').textContent=`Guardado ${hora}`;
-    setTimeout(()=>{ document.getElementById('sb-txt').textContent='CNM v57'; _agSetDot('idle'); },8000);
+    setTimeout(()=>{ document.getElementById('sb-txt').textContent='CNM v58'; _agSetDot('idle'); },8000);
   }catch(e){
     _agSetDot('error');
     console.warn('Autoguardado falló:',e);
