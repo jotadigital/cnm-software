@@ -1051,6 +1051,29 @@ textarea.fi{resize:none;min-height:75px}
    <button class="mclose" onclick="closeM('msync')">✕</button>
   </div>
   <div class="mbody" style="padding:18px">
+   <!-- URL tunel / Escanear QR -->
+   <div style="background:#FDF3DC;border-radius:10px;padding:12px 14px;margin-bottom:10px;border:1px solid #C9A84C">
+    <div style="font-size:11px;font-weight:700;color:#8B6914;margin-bottom:6px">🔗 CONEXIÓN SYNC DESDE APP PC</div>
+    <div style="display:flex;gap:6px;align-items:center;margin-bottom:6px">
+     <input id="sync-url-manual" type="url" placeholder="https://xxxx.trycloudflare.com"
+      style="flex:1;background:#fff;border:1.5px solid #C9A84C;border-radius:7px;padding:8px 10px;font-size:12px;font-family:monospace;outline:none;color:#111">
+     <button onclick="syncConUrl()" style="background:#8B6914;color:#fff;border:none;border-radius:7px;padding:8px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:Rajdhani,sans-serif;white-space:nowrap">→ Conectar</button>
+    </div>
+    <button onclick="abrirEscanerQR()" style="width:100%;background:#1F6FEB;color:#fff;border:none;border-radius:7px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:Rajdhani,sans-serif;display:flex;align-items:center;justify-content:center;gap:7px">
+     📷 ESCANEAR QR DEL PC
+    </button>
+    <div style="font-size:10px;color:#888;margin-top:5px">Toca "Generar Conexión Sync" en la app PC y escanea el QR</div>
+   </div>
+   <!-- Visor camara QR -->
+   <div id="qr-scanner-wrap" style="display:none;background:#000;border-radius:10px;overflow:hidden;margin-bottom:10px;position:relative">
+    <video id="qr-video" style="width:100%;max-height:220px;object-fit:cover;display:block" playsinline autoplay muted></video>
+    <canvas id="qr-canvas" style="display:none"></canvas>
+    <div style="position:absolute;top:0;left:0;right:0;bottom:0;pointer-events:none;display:flex;align-items:center;justify-content:center">
+     <div style="width:160px;height:160px;border:3px solid #C9A84C;border-radius:8px;box-shadow:0 0 0 2000px rgba(0,0,0,0.4)"></div>
+    </div>
+    <button onclick="cerrarEscanerQR()" style="position:absolute;top:8px;right:8px;background:rgba(0,0,0,.7);color:#fff;border:none;border-radius:50%;width:32px;height:32px;font-size:16px;cursor:pointer">✕</button>
+    <div style="position:absolute;bottom:8px;left:0;right:0;text-align:center;color:#C9A84C;font-size:12px;font-weight:700;font-family:Rajdhani,sans-serif">Apunta al QR de la app PC</div>
+   </div>
    <!-- Estado principal -->
    <div id="sync-estado" style="background:#F4F5F7;border-radius:12px;padding:16px;text-align:center;margin-bottom:14px">
     <div id="sync-icono" style="font-size:36px;margin-bottom:8px">📡</div>
@@ -3395,38 +3418,36 @@ let _qrStream = null;
 let _qrAnimFrame = null;
 
 function abrirEscanerQR(){
-  const wrap = document.getElementById('qr-scanner-wrap');
-  const video = document.getElementById('qr-video');
-  wrap.style.display = 'block';
+  const wrap=document.getElementById('qr-scanner-wrap');
+  const video=document.getElementById('qr-video');
+  wrap.style.display='block';
   navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}})
     .then(stream=>{
-      _qrStream = stream;
-      video.srcObject = stream;
-      video.play();
+      _qrStream=stream; video.srcObject=stream; video.play();
       _scanearFrame();
     })
     .catch(e=>{
       wrap.style.display='none';
-      toast('⚠ No se pudo acceder a la cámara: '+e.message,'e');
+      toast('⚠ Camara no disponible: '+e.message,'e');
     });
 }
 
 function cerrarEscanerQR(){
-  if(_qrStream){ _qrStream.getTracks().forEach(t=>t.stop()); _qrStream=null; }
-  if(_qrAnimFrame){ cancelAnimationFrame(_qrAnimFrame); _qrAnimFrame=null; }
+  if(_qrStream){_qrStream.getTracks().forEach(t=>t.stop());_qrStream=null;}
+  if(_qrAnimFrame){cancelAnimationFrame(_qrAnimFrame);_qrAnimFrame=null;}
   document.getElementById('qr-scanner-wrap').style.display='none';
 }
 
 function _scanearFrame(){
-  const video = document.getElementById('qr-video');
-  const canvas = document.getElementById('qr-canvas');
-  if(!video.videoWidth){ _qrAnimFrame=requestAnimationFrame(_scanearFrame); return; }
+  const video=document.getElementById('qr-video');
+  const canvas=document.getElementById('qr-canvas');
+  if(!video.videoWidth){_qrAnimFrame=requestAnimationFrame(_scanearFrame);return;}
   canvas.width=video.videoWidth; canvas.height=video.videoHeight;
   const ctx=canvas.getContext('2d');
   ctx.drawImage(video,0,0,canvas.width,canvas.height);
   try{
-    const img=ctx.getImageData(0,0,canvas.width,canvas.height);
     if(window.jsQR){
+      const img=ctx.getImageData(0,0,canvas.width,canvas.height);
       const code=jsQR(img.data,img.width,img.height,{inversionAttempts:'dontInvert'});
       if(code&&code.data&&code.data.startsWith('http')){
         cerrarEscanerQR();
@@ -3444,7 +3465,7 @@ function _scanearFrame(){
 
 async function syncConUrl(){
   const url=(document.getElementById('sync-url-manual').value||'').trim();
-  if(!url){toast('⚠ Ingresa la URL del túnel','e');return;}
+  if(!url){toast('⚠ Ingresa la URL de conexión','e');return;}
   const base=url.replace(/\/+$/,'');
   _syncSet('⏳','Conectando al PC...','Verificando URL...','scan');
   document.getElementById('sync-btn-ok').style.display='none';
@@ -3453,7 +3474,7 @@ async function syncConUrl(){
   try{
     const r=await fetch(base+'/ping',{
       headers:{'X-CNM-Token':SYNC_TOKEN},
-      signal:AbortSignal.timeout(8000)
+      signal:AbortSignal.timeout(10000)
     });
     if(r.ok){
       const data=await r.json();
@@ -3464,7 +3485,7 @@ async function syncConUrl(){
         data.ultimo_updated_at?'Último: '+data.ultimo_updated_at.substring(0,16).replace('T',' ')+'h':'';
       document.getElementById('sync-pc-info').style.display='block';
       document.getElementById('sync-btn-ok').style.display='block';
-      _syncSet('✅','PC encontrado vía túnel','Confirma para sincronizar','ok');
+      _syncSet('✅','PC encontrado','Confirma para sincronizar','ok');
       localStorage.setItem('cnm_sync_url',base);
     }else{
       _syncSet('❌','No autorizado','Verifica que la app PC esté abierta','err');
@@ -3479,8 +3500,8 @@ async function syncConUrl(){
 
 async function openSyncWifi(){
   openM('msync');
-  const savedUrl=localStorage.getItem('cnm_sync_url');
-  if(savedUrl){ const inp=document.getElementById('sync-url-manual'); if(inp) inp.value=savedUrl; }
+  const saved=localStorage.getItem('cnm_sync_url');
+  if(saved){const inp=document.getElementById('sync-url-manual');if(inp)inp.value=saved;}
   await syncBuscarPC();
 }
 
