@@ -1215,13 +1215,28 @@ async function getUsuarioPorNombre(nombre){
   });
 }
 async function asegurarAdminMaestro(){
-  const todos=await iallA('usuarios');
-  if(!todos.length){
-    await iputA('usuarios',{
-      usuario:'admin', password:'0000',
-      nombre_colegio:'ADMINISTRADOR',
-      esAdmin:true, creado:new Date().toISOString()
-    });
+  try{
+    const todos=await iallA('usuarios');
+    const tieneAdmin=todos.some(u=>u.usuario==='admin');
+    if(!tieneAdmin){
+      await iputA('usuarios',{
+        usuario:'admin', password:'0000',
+        nombre_colegio:'ADMINISTRADOR',
+        esAdmin:true, creado:new Date().toISOString()
+      });
+      console.log('Admin creado OK');
+    }
+  }catch(e){
+    console.error('asegurarAdminMaestro error:',e);
+    // Intentar crear directamente si falló
+    try{
+      const t=dbAdmin.transaction('usuarios','readwrite');
+      t.objectStore('usuarios').add({
+        usuario:'admin', password:'0000',
+        nombre_colegio:'ADMINISTRADOR',
+        esAdmin:true, creado:new Date().toISOString()
+      });
+    }catch(e2){ console.error('Fallback admin error:',e2); }
   }
 }
 async function listarUsuarios(){ return await iallA('usuarios'); }
@@ -3056,14 +3071,29 @@ async function login(){
   const u=document.getElementById('lu').value.trim();
   const p=document.getElementById('lp').value.trim();
   const msg=document.getElementById('lmsg');
+  msg.style.color='#C9A84C';
   msg.textContent='⏳ Verificando…';
   try{
-    if(!dbAdmin) await openAdminDB();
+    if(!dbAdmin){
+      msg.textContent='⏳ Abriendo base de datos…';
+      await openAdminDB();
+    }
+    msg.textContent='⏳ Iniciando…';
     await asegurarAdminMaestro();
+    await new Promise(r=>setTimeout(r,300));
+    msg.textContent='⏳ Buscando usuario…';
     const usr=await getUsuarioPorNombre(u);
-    if(!usr||usr.password!==p){
+    if(!usr){
+      const todos=await iallA('usuarios');
+      console.log('Usuarios en BD:',todos);
       msg.style.color='#ff6b6b';
-      msg.textContent='⚠ Usuario o contraseña incorrectos';
+      msg.textContent=todos.length===0?'⚠ BD vacía — toca "Restablecer acceso"':`⚠ Usuario "${u}" no existe`;
+      document.getElementById('lp').value='';
+      return;
+    }
+    if(usr.password!==p){
+      msg.style.color='#ff6b6b';
+      msg.textContent='⚠ Contraseña incorrecta';
       document.getElementById('lp').value='';
       document.getElementById('lp').focus();
       return;
@@ -3073,7 +3103,7 @@ async function login(){
       nombre_colegio:usr.nombre_colegio||'',
       esAdmin:!!usr.esAdmin,
       dbName:usr.esAdmin?'cnm_v4_admin':`${DBN_PREFIX}${usr.id}`,
-      _pwd:usr.password||'0000'  // para PIN por defecto
+      _pwd:usr.password||'0000'
     };
     db=null;
     await openDB(_usuarioActual.dbName);
@@ -3099,13 +3129,29 @@ async function login(){
 
 async function resetCredenciales(){
   if(!confirm('¿Restablecer contraseña del admin a "0000"?'))return;
-  if(!dbAdmin) await openAdminDB();
-  const usr=await getUsuarioPorNombre('admin');
-  if(usr){usr.password='0000';await iputA('usuarios',usr);}
-  document.getElementById('lu').value='admin';
-  document.getElementById('lp').value='0000';
-  document.getElementById('lmsg').style.color='#4ade80';
-  document.getElementById('lmsg').textContent='✓ Restablecido · usuario: admin · clave: 0000';
+  try{
+    if(!dbAdmin) await openAdminDB();
+    // Intentar obtener admin existente
+    let usr=await getUsuarioPorNombre('admin');
+    if(usr){
+      usr.password='0000';
+      await iputA('usuarios',usr);
+    } else {
+      // Crear admin desde cero
+      await iputA('usuarios',{
+        usuario:'admin', password:'0000',
+        nombre_colegio:'ADMINISTRADOR',
+        esAdmin:true, creado:new Date().toISOString()
+      });
+    }
+    document.getElementById('lu').value='admin';
+    document.getElementById('lp').value='0000';
+    document.getElementById('lmsg').style.color='#4ade80';
+    document.getElementById('lmsg').textContent='✓ Restablecido · usuario: admin · clave: 0000';
+  }catch(e){
+    document.getElementById('lmsg').style.color='#ff6b6b';
+    document.getElementById('lmsg').textContent='⚠ Error: '+e.message;
+  }
 }
 
 // ─── INIT ─────────────────────────────────────────
