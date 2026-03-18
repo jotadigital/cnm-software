@@ -3427,10 +3427,15 @@ async function syncPush(){
       return;
     }
     const _pushBase=_syncBaseUrl||`http://${_syncIP}:${SYNC_PORT}`;
+    // Usar text/plain para evitar preflight CORS (simple request)
+    const payload=JSON.stringify({registros:activos});
     const r=await fetch(`${_pushBase}/push`,{
       method:'POST',
-      headers:{'X-CNM-Token':SYNC_TOKEN,'Content-Type':'application/json'},
-      body:JSON.stringify({registros:activos}),
+      headers:{
+        'X-CNM-Token':SYNC_TOKEN,
+        'Content-Type':'text/plain'
+      },
+      body:payload,
       signal:AbortSignal.timeout(60000)
     });
     if(!r.ok){
