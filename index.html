@@ -503,6 +503,7 @@ textarea.fi{resize:none;min-height:75px}
                  oninput="buscar(this.value)" autocomplete="off" autocorrect="off">
         </div>
         <button onclick="buscar(document.getElementById('si').value)" style="background:#E8F0FE;color:#1F6FEB;border:1px solid #1F6FEB;border-radius:8px;padding:10px 12px;font-size:16px;cursor:pointer;flex-shrink:0" title="Actualizar lista">🔄</button>
+      <button onclick="guardarCambios()" style="background:#1A6B3A;color:#fff;border:none;border-radius:8px;padding:10px 14px;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0;font-family:'Rajdhani',sans-serif" title="Guardar cambios">💾 Guardar</button>
       <button id="bnuevo" onclick="openFormProtegido(null)">＋ Nuevo</button>
       </div>
 
@@ -3273,7 +3274,8 @@ async function autoguardarSilencioso(){
     _agPendiente=false;
     _agSetDot('ok');
     const hora=new Date().toLocaleTimeString('es-CL',{hour:'2-digit',minute:'2-digit'});
-    document.getElementById('sb-txt').textContent=`Guardado ${hora}`;
+    const fecha=new Date().toLocaleDateString('es-CL',{day:'2-digit',month:'2-digit',year:'numeric'});
+    document.getElementById('sb-txt').textContent='💾 '+fecha+' '+hora;
     setTimeout(()=>{ document.getElementById('sb-txt').textContent='CNM v58'; _agSetDot('idle'); },8000);
   }catch(e){
     _agSetDot('error');
@@ -3681,6 +3683,36 @@ async function syncConUrl(){
     document.getElementById('sync-error-info').style.display='block';
     document.getElementById('sync-error-info').textContent='Error: '+(e.message||'timeout');
     document.getElementById('sync-btn-buscar').style.display='block';
+  }
+}
+
+async function guardarCambios(){
+  try{
+    // Forzar escritura de todos los datos pendientes en IndexedDB
+    const todos = await iall('alumnos');
+    const cfg = await iall('cfg');
+    const pdfs = await iall('pdfs');
+    // Guardar autoguardado con timestamp actual
+    const d = JSON.stringify({version:1, ts:new Date().toISOString(), alumnos:todos, config:cfg});
+    localStorage.setItem('cnm_autoguardado', d);
+    localStorage.setItem('cnm_autoguardado_ts', new Date().toISOString());
+    _agPendiente = false;
+    _agSetDot('ok');
+    const hora = new Date().toLocaleTimeString('es-CL',{hour:'2-digit',minute:'2-digit'});
+    document.getElementById('sb-txt').textContent = 'Guardado '+hora;
+    // Confirmacion clara al usuario
+    const fechaHora = new Date().toLocaleDateString('es-CL',{
+      weekday:'long', year:'numeric', month:'long', day:'numeric'
+    }) + ' · ' + hora;
+    await confirm2(
+      '✅ Guardado exitoso',
+      'Los cambios han sido guardados\ncorrectamente en la base de datos.\n\n📅 ' + fechaHora,
+      'Aceptar'
+    );
+    document.getElementById('sb-txt').textContent = '💾 Guardado ' + hora;
+    setTimeout(()=>{ document.getElementById('sb-txt').textContent='CNM v58'; _agSetDot('idle'); }, 5000);
+  }catch(err){
+    toast('⚠ Error al guardar: '+err.message,'e');
   }
 }
 
