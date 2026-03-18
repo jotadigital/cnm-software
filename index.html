@@ -3548,10 +3548,6 @@ async function syncConCodigo(){
 }
 
 async function syncConUrl(){
-  // Mantener por compatibilidad — redirige a syncConCodigo
-  await syncConCodigo();
-}
-async function syncConUrl(){
   const url=(document.getElementById('sync-url-manual').value||'').trim();
   if(!url){toast('⚠ Ingresa la URL de conexión','e');return;}
   const base=url.replace(/\/+$/,'');
