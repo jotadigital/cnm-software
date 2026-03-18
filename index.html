@@ -398,7 +398,7 @@ textarea.fi{resize:none;min-height:75px}
     <button onclick="iniciarSistema()" style="width:100%;background:#8B6914;color:#fff;border:none;border-radius:10px;padding:15px;font-size:15px;font-weight:700;cursor:pointer;font-family:'Rajdhani',sans-serif;letter-spacing:.5px">
       → COMENZAR A USAR CNM
     </button>
-    <div style="text-align:center;font-size:10px;color:#aaa;margin-top:12px">CNM Software v43 · Esta pantalla solo aparece una vez</div>
+    <div style="text-align:center;font-size:10px;color:#aaa;margin-top:12px">CNM Software v57 · Esta pantalla solo aparece una vez</div>
   </div>
 </div>
 
@@ -527,7 +527,7 @@ textarea.fi{resize:none;min-height:75px}
         <span id="sbinst">ESCUELA MARIO BAEZA · Las Naciones 823, Maipú</span>
         <span id="sb-guard" style="display:flex;align-items:center;gap:5px;font-size:10px;color:#888">
           <span id="sb-dot" style="width:7px;height:7px;border-radius:50%;background:#888;display:inline-block;transition:background .4s"></span>
-          <span id="sb-txt">CNM v43</span>
+          <span id="sb-txt">CNM v57</span>
         </span>
       </div>
     </div>
@@ -3240,7 +3240,7 @@ async function autoguardarSilencioso(){
     _agSetDot('ok');
     const hora=new Date().toLocaleTimeString('es-CL',{hour:'2-digit',minute:'2-digit'});
     document.getElementById('sb-txt').textContent=`Guardado ${hora}`;
-    setTimeout(()=>{ document.getElementById('sb-txt').textContent='CNM v43'; _agSetDot('idle'); },8000);
+    setTimeout(()=>{ document.getElementById('sb-txt').textContent='CNM v57'; _agSetDot('idle'); },8000);
   }catch(e){
     _agSetDot('error');
     console.warn('Autoguardado falló:',e);
