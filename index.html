@@ -446,6 +446,8 @@ textarea.fi{resize:none;min-height:75px}
       <div class="top-school" id="tschool" style="font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">ESCUELA MARIO BAEZA</div>
       <div class="top-sys" style="font-size:10px;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">CNM Software · Sistema Escolar</div>
     </div>
+    <button onclick="toggleFullscreen()" title="Pantalla completa"
+      style="background:none;border:none;color:#C9A84C;font-size:18px;cursor:pointer;padding:4px;flex-shrink:0">⛶</button>
     <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex-shrink:0">
       <div id="stats-pill" style="background:#FDF3DC;border:1px solid #C9A84C;border-radius:20px;padding:3px 10px;font-size:12px;font-weight:700;color:#8B6914;white-space:nowrap">— alumnos</div>
       <span id="user-badge" style="display:none;background:#E8F0FE;color:#1F6FEB;border:1px solid #1F6FEB;border-radius:20px;padding:2px 8px;font-size:10px;font-weight:700;font-family:'Rajdhani',sans-serif;white-space:nowrap;max-width:120px;overflow:hidden;text-overflow:ellipsis"></span>
@@ -3690,6 +3692,16 @@ async function syncConUrl(){
     document.getElementById('sync-error-info').style.display='block';
     document.getElementById('sync-error-info').textContent='Error: '+(e.message||'timeout');
     document.getElementById('sync-btn-buscar').style.display='block';
+  }
+}
+
+function toggleFullscreen(){
+  if(!document.fullscreenElement){
+    document.documentElement.requestFullscreen().catch(()=>{
+      toast('⚠ Tu navegador no permite pantalla completa','e');
+    });
+  } else {
+    document.exitFullscreen();
   }
 }
 
