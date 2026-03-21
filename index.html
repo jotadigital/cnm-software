@@ -109,7 +109,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Nunito
 }
 #logo-circle img{width:100%;height:100%;object-fit:cover}
 .top-names{flex:1;min-width:0}
-.top-school{font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;color:#8B6914;white-space:normal;overflow:visible;text-overflow:unset;line-height:1.2}
+.top-school{font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:800;color:#8B6914;white-space:normal;overflow:visible;text-overflow:unset;line-height:1.2;letter-spacing:.3px}
 .top-sys{font-size:12px;color:var(--text3)}
 #stats-pill{background:#FDF3DC;border:1px solid #C9A84C;border-radius:20px;padding:5px 14px;font-size:14px;font-weight:700;color:#8B6914;white-space:nowrap;flex-shrink:0}
 #hbtn{background:none;border:none;color:#444;font-size:22px;cursor:pointer;padding:4px 6px;flex-shrink:0}
@@ -266,7 +266,7 @@ textarea.fi{resize:none;min-height:75px}
 .tabc{display:none}.tabc.on{display:block}
 
 /* ─── LOGIN ─── */
-#login-panel{display:flex;position:fixed;inset:0;background:#F4F5F7;z-index:1000;align-items:center;justify-content:center;padding:20px}
+#login-panel{display:flex;position:fixed;inset:0;background:#F4F5F7;z-index:1000;align-items:center;justify-content:center;padding:20px;overflow-y:auto}
 .lcard{background:#fff;border-radius:16px;border:1px solid #C8CCD0;padding:32px 26px;width:100%;max-width:330px;box-shadow:0 4px 24px rgba(0,0,0,.1)}
 .llogo{font-size:52px;text-align:center;margin-bottom:10px}
 .llogo img{width:80px;height:80px;object-fit:cover;border-radius:50%}
@@ -402,51 +402,85 @@ textarea.fi{resize:none;min-height:75px}
   </div>
 </div>
 
-<div id="login-panel">
-  <div class="lcard">
-    <div class="llogo" id="llogo"><img src="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAQDAwMDAgQDAwMEBAQFBgoGBgUFBgwICQcKDgwPDg4MDQ0PERYTDxAVEQ0NExoTFRcYGRkZDxIbHRsYHRYYGRj/2wBDAQQEBAYFBgsGBgsYEA0QGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBj/wAARCACWASwDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwD4PAxS9qWgD2rYkO3vS0beaUDmgAA96dg0AYpaBXExxSgY5pQKdtx1p2C43BPNLinY4xTtuTkU7CuMAoI96ft9acF4yRTsK5GFPSlCmpQnFO2UWC5FtOO1Jtzz3qfZ0o2DpTsFyAKc5707acVMI+560oTjOKLCuQ7Dik2ECrGOM4waTYSKdh3K+xutGyp9vHFKE9qVhXK4X2oK8VYMeKaUosFyDb6ikKnFWPLyaTaRxRYdyDacUY5qcqMfWmhKVguQkZFJtz9am280bKLDuV9hzQOuKlIxSbeKVgIj70lSFeKZtNKw7jSKbipMU3HNIdxnakOKeQcYphBzxQA7FKBRSigAFOwRQBmlANNCYDNOHSgDB5FOAzTEJjjgU7bntTh7CnBfenYVxuD6U4AgjNPCnuacF4p2ENCk9RSgDOMVIq96ds98GnYBgXI6Uu3J7VKowD3oA+bpimBFs9qfsyOlPUZPTFO2+gp2FcjK+lIBj61MF4o2gD3osFyHac9qMdiKnC5ODQUxRYLkW0dKUr7VLtyc9KQjBAzRYLkBUk/SkKE1ORjgCgLz70WC5Bt9qTb61OVOelBHtRYLlcoM96TBxipyvHNMYH0pWGQslMI4zVjHtTSp9KVgK5HcimkZ7VYZRjk0wrk5NFgISPQU1hzUu3uKYwqbDuRH2pnWpSOelIf1pDITnPSkI57VIRkUwgZqRoUA5pcUdTThnOKaBsUY704DmjHNOC84zTQgxxTwDngUACn/AEqiRApp4HFKvToc1JjPFOwDQpK9KeB2xxShRx0FPA4xTAaF59qXHTNPQYzUgUdSOKdhXGKvFLtNOwAc08Y20xDdnagLgcU+NXkk8uONnb+6ikn8hWnHoGolRJcLb2MZ6PezpD/46Tu/StIUpT+FXM6lanT+OSRl7cDB60eWTwa2007w9bnOo+KUf1TT7R5j/wB9PtFTJqPgG1+7o2u6mw73F2lup/BAT+tbLDfzyivnf8rs5ZY5f8u6cpekbfjLlX4nPbcHI5xSNJEp+Z0H1YV1UHjbQrNgdP8AhtoBI6NfPNdH8iwFacHxo8U2QC6R4e8H6aB0MGhQMR+LhqmUKUft39E/1sEMRiJ/8ubesl/7bzHBIyudqfOfRRn+VTx6bqEvMen3snulu5/kK9Ej/aL+NEHFl4vFkvYWmnWsWPpiKnn9pL4/Mcf8LU15R2CGJf5JWEmvsnXDnfxpL53/AER50+m6ig+bTL5fdraQf0qpLmI4lVoz33qV/nXpw/aT+Pycj4q+Id3u8Z/9kq5F+1J+0BHhZPiHdXS/3byxtJ1P4PEai7NLI8iSSNuFljY+zA08g7uRivXB+0l42uXP/CS+Fvh94jVvvDUvDFsGP/AowhFWLX4pfA/XZPK8a/AOz00ufmvfCmoS2zL7+UzBfwzVLXcibcdlc8ZKjGKNpxX0dpfwW+DPxPjc/Cn4m3tlfhd50jW4VeVR9Pkcj3XeK878cfAv4i+BI5bu/wBKj1LTY+WvtLYzIo9XXAdPxGPetXQnbmSuvI5442i5cjdn2en5nmRWmleKlBDDIHHakPC4xzWNjrICvPSmFetTEc9aYy5pDK7CmleBipinfFRsB3pWAiI9qjIOetTEc0wg5zUjuRYphAz3qQ4HvTCBUsYoxTsCm45608DPemAo/KnqDjikUc08fhTQDgMj3p6rzyKaBT1xTJHinAcelNxzyaeM1QDlAx0zTxjPFAHyj+tLjJCqpYnjaBkk+gppCbOr8AfDXxt8T/EZ0TwLoFxqtygDTOpCQ26no0sjYVBwcZOTg4Br6X0T/gn547urZJPEXj7w/pjsMmG0tpbsr7biYx+Ve1fs+Q6N8PP2ffD2l2EKQ3d5bJqOoS4w81xKoYlj32gqgHYL9a4v9pL9qDxd8Nr3SNA8EW+nm8vrZ7qa+vYjMIVD7FVEyASSCSWzjjis5SleyKSVjE/4d5XPb4tW5+uin/4/Sj/gnrfKfl+K9m3s2jNj/wBH14kP2yv2gic/8JJpX4aRB/hTh+2T+0ITx4m0r/wTwf4Uvf7j907v4s/shax8LPg5rPjiT4lW99Bpqxk2NvprWxl3ypHjcJDj7+eQelVfhR+xhqPxU+EOjeP4PiFaaYmqLIwtZNMaZo9krx8uJBnOzPTvXmXjH9pb4x+P/Bd74R8Va7YXWlXwQTxRadFEzbXDjDKMj5lFfbP7LPiRNP8A2SPB1o0m0pFccZ9bmU05SnbVkxhFPRHz94+/YP8AHXhbwdPrnhnxFbeLbm3+eTTILNred0A5MWXYOw/ucE9sng/LDQGKV45YmSRGKOjqVZSDggg8gg8EHkV+u918VPD1h4r03w1e6vDb6nqcUktlBKdv2gRkBlQngsNwO3qR0zivEPj58BPC3xVE3ifw41rovjDG57jG2DUcDhZwOj9hKOf7wI6KE39opx7H58YRUJxmvrfwd+wvqnjD4d6F4ri+JFlaJq1hBfrbtpTuYhLGH2lvNGcZxnA6V8s+I9B1vwxrd3oWv6bNYahbEiWCZcEehB6Mp7MMg9q/UL4S+KTafALwRbGUfutCsk/KFaupJpe6TFJ7nwp4j/Z6uvD37VeifBKXxXb3E+qLC41RbNlSPzFkb/V7yTjyv7w617Wv/BPTVc5PxTsfw0d//j1UfiBqy3P/AAVV8DaiWyiRWIJ+kU/+NfZa+LY9g/er09azlOWlilFH5T/Fb4VeJ/hD8Qrjwt4ntweDLZ3sanyb2HOBJGT+TL1U8HsTw+B2r9VPiZ4c8E/HH4Xf2Pq8sM0Ey/aNN1a1Id7WQjCyxt3HZl6MMg84I/NDxp4G8SeAfHtx4R1yzLX6OBA8ClkvEY4SSLuwbsOoOQeRWsJ8y1JkrHP21nc319BYWdpLdXNw6xQwQoXkldjhVVRySSQABX1t4e/4J++LNU8LWOoa9450/RdRniEk2nCwa5+zE/wGQSKGYDGcDGcgE9T6D+zF8CdO+G9vD478a28U3i+eP/RrV8Mukow5A9Z2Bwzfwj5R/ET9LW3jXTr1JjZXsNwIJnt5DEwYJIhw6EjuDwR2PFZzqPaJUY9z8yPj38BtR/Z68QeHBH4wGqXWoJNcw3FpbNaPbNEyDIO9jk7+oIxivbvhn8S9S8XfCXT9T1uQnUkaS2nmxt88oceZx3YYz7g1sfte+HR8RfiN4Jt2vxa29np93LOyjLsGmiACds8dT0964m2XTPDvh+OztvKstPtI9o3NhUUdSSfxJJ6k19dwzl9SpfEVNIfm/wDgH5vx1nFKCjgqOtW6b8k1t89NDzf43+E9GttnivSLaOzeWcRXcMShUkZgSJAo4ByMHHXIPXOfFc7mz0r2HxpqM3jTwdqfiCLzLbwnpLeTDeSAr/amoN8scMQPJCgu7HsqnOCQK8d/hxXlZxOhLFS+r/D+DfWx9LwzSxlPL4Rxvx677pdE/wCtNhjDJ6UzBx0xUh6j0phByeeK8tn0CGN04qE+/NSnrgioyMGpYyMjmoz6VI/XrUZzikNETU3B9KeRzSHFSMaBzThxTQDTxnHrQA4YzUgOD60wc808daaEyRTlcEU4DFMU4NPBB4qkIkUZwKfwPrTBwadjPI/OmBc02wutU1OKxs4980hwBnhR3JPYCun163s/BtjHp2nt5ur3EZaW8YYMSHjCD+EnnnrgVL8LriyTxDeQTlRdSwgQ7v4gDlgPfofwrS+Ivhm+u7uPW7GF51SIRzRoMsoGSGA7jnmvo8LgmsuliqKvNu3+Fdbefn22PmsXj08yjhKztTtfyk+l/Ly77n0P4E1LVr74YeH7qxuDJA1hCqlecFVCkfUFSPwryj4+eHPFmq67pmt/2Xd3tpFaG3eWCIyeU28thgMkAg9enWuL+Fvxm8Q/C+5a2is4dZ0OV982mXLFdrHq8TjJjY9xgg9x3r6X0L9qT4J6nbqdWt9e0G4I+ZJrL7QgPs8ROR/wEV822fSJHxt/Z14hw1hdL7GF/wDClFldAZ+x3HHbyW/wr7nb46/s+T4Y+Ogh/wCmlhdA/wDouoX+N3wAPC+Prf8A8Arn/wCN0+cOU+G5LWeNS72kyKOrNGwA/MV9VfCDxLqlh8FNBtLYZijikC5P/TVzTfi/8UPhB4h+C+vaV4Z8XwXuqzxxi3t1tp0LkSoSMsgA+UE8ntUfwk+JXwe0L4K6DpXibxdbWWrQRSLcW72szlCZXI5VCDwQeD3o5kwszgf2jtc1DU9U8MyzFo5II52jdGIKnfGcg9iCBzW78Mv2ldY8q38PeN70PKMRwatK2N/YLMfX/b79/Wud/aH8WeBPFep+HZPA2txapHbwzrctHDJFsZmQqPnUZyAenpXizwh06cH1otcD7O+IGgWHxI0QWutWYF1GpFrfxY86DPof4kPdTwfY81ueHNV1fQvBulaJJtlaxs4rUyKSA2xAuRnp0r54+DnxsPgy8t/DvjWObUPDbEIlwq759PHqo6vGO6dR/D6H6NPxl/Z8JwfHloR6/Yrn/wCN0mwSZ4X4t1i9b9tfw9qpX/SIo7baufSOTH8691/4TnWFUFovT+KvBvFfjL4c337Znh/xNpviCGbwtBHbi5vxBIFQqkgb5Su44JXoO9e0/wDC1fgA2P8AiurYgf8ATlc//G6NAsz56+E/x01j4fatc6BqdxLN4dnuZHVSSTZSM5Jdf9g/xL+I5zn6NuNdtNb1TStfudLtL26sN0theMA7Q715aNvcd/xHNfDbQ/b9XmhsI5Lp3lcxpAhkZgWOMKMmvbfAHh79oRPAl34b8PeC9Tis7jH2a/1KP7KbIH7/AJTSleD9DtOSOtOyQa9DsPi3+0Zq2j2Vx4W8L3Pl6s4Mdxextn7GCOQv/TX/ANB+uMaHwQ+INn4U/Z5059X1e2sovtV25kupwpYmYknk5Y/ma5Cx/ZN1yys/7T+IPjjQvDtp96Rg5mb1OXcomffJra0bwh+zloEqHS0ufH1/GcCe9u44rNT/ALzlI8Z9BJU6DGeJfifqfxL8cWw+G/hrVfFFxbWb2hlSJordC0qvuZ2xhfl77araz4M0Pwpbx65+0V4xS5m/1tp4K0KTJlPYOQQcep4H+2elR/F/4u+NPDWm6Xofg/UvD2h2F3FIzQ+HtkjQBSoC+b0UnJ5VF6cV83zvdX19Je31zNc3Mp3STzuZHc+rMSST9a6njK7orD83uLp/W/zOBZbhViHi+ROo+r1eitp2+R2fxG+JepfETVrRF0+20bQNNQw6VolmNsFnGevAADOcDLY9hxXGMce9OCbAAAKaRxWCVjuY1unFMzxzTzUb4FDBCHoecmomJx0p5xjJqMt2qWMjYjvTDTz61E+fpSGhrGm4FBNNPJqRgKcDTQeKUcikgJAeaeCPSohTxg1SEyUcjipAoyOaiXgZp4NMRMCOlO+hqIEZqQE47VQCr5iOssTsjqQyupwQexBrttF+KOrWCrDrFquoxjjzVPly/iejfpXEjPXNOwp+tdWFxtfCy5qMrf122OTF4DD4yPLXhf8AP79z1KTXPhd4n+bVIm0+5brLIjRNn3dMg/jUJ+GvhjUvn0LxlbNnokjRyfyIP6V5kUU9sV1ngf4XeJ/iEuq3Ghxafb2GjwC51LVNUvEtLWyjYkKZJX6ZIOAAScGu+ebQq64mhGT7q8X96PJjkdWjphMTOC7O0l8kzbl+C/iI/Na32m3K9judP/ZT/Oqr/BvxorfJYWsv+5dKP54rI8TeFNY8FXFmE8WaHqcN2rPDc+HNbS9j+UgEN5ZDIckcMBntnFdd4a+H/wAV9S8GWni6bxdaeF/D947R2WpeI/EAsI7xlOGEKsS8gB4yFx71k6+XS1dKS9JJ/mivqucw0jXhL1g1+UjIi+DfxAY/u9AD/S6i/wDiqtx/Az4mTkFPDOQfW7hH/s9WPGVh8avh0uny674jv20/UozLp2p6fqi3lneopwTFMhKtjIyOCMjiuh0jw98bdR+HOl+N5firpGhaLqkksVnNrfiaOwaZonKOArjqCPywe9ZyngLXSn98f8i4wzm/vSpfdP8AzMu0/Zz+LE7gR+HrVAe8moQj/wBmNdHp/wCyb8XL9gDDoVqD3mvy3/oCGuHudf8AibH46Xwqfiys8jypENSt/ERbT/mUHcblTt2jOC3Ygius174ZfGHSvB9t4o1n4saAdJvY5ns7j/hNSy33lf6xYOf3jAjGB3wKxlUw6+FP5tf5HVTp49/HKPyT/Vnc6d+w949uQr6r448Laenc7LiUj81UfrW2v7Gfw70mPzPGH7ROhWOOXWOO3hx+Ms5/lXzVpPgvxp4v+HfiPxtZ3hv9P8PCN9Sjnv2a4ijkOFkETElkznJB42t6VPrnwb8c+HPhz4Z8c6poATSfEriPTXjIaV2YZRWTGVLgEr/eFcs2m9NDupxkl77ufRn/AAqv9hzwu2fEHxr1DXJk+9HZ3m9W9gLaEn/x6mTfEj9hnwiv/FO/CzU/EtxH92W5tHkDH13XUoH/AI7XzN458A658OfG9z4R8TfY11W1SNp4bW5E6xF1DBGYcbsEEjtkVt3nwV8e6d8GLf4p3WjIvhu5KFZRMDMkbsyJK8XVY2ZSA54OR2NRy92a3PaL79tG00qI2vw6+D2i6HCBhGnmVcf8AgRB/wCPV5r4l/ah+NXibeq+JY9GibqmkWqQHH/XQ7n/APHq4XwR4I13x/480/wd4Zit5dUv2dbdLiYQoSqM5yx6fKprq734IeMrfw/rGraXqPhLxFDosLXGpReH9dgvZ7OJThpHiXDbQQckA4waq0VoxXbPN9T1DWNevjea5qt9qVweTLezvM35sTiqf2VGfLIpPqRmu68CfDTxB8RX1j+wbnR7WLR7P7ff3Wq3y2kMEO7BcuwIwMc1V8VeDJvCttbTSeK/B2tCdym3w/rUWoNHgZzIEHyg9iepp6XsLU5SOFI/uqo9cCpQcsKaCC2aUkZ4HNUICeRmmMe3agtnimEnHXilcdhGPsajOdxpWOTwTTDnPXmkMQ56Uw49acTnJNRsQO9JgNYk1ExPQ09m56VGT3qWNDScUw04n0phbmpZSDpxThjvTep60o+gpDZJxxThjPSogRnFPB4xVEk2e2eKeMEVADTwxxxVCsTcE05cY681CG4xmnhueKBE2eaeDyBnHtUStgDNOyCRVASZ969F+EnxC0/4e65qF9d6p4202a5hWKO68L3sEZUAklZoJ0ZJ1PGASMc9c15xx60uAevWhq4LQ9d+MfxX8LfEbS9AtNF8M3EWo6cZDe+I9Rt7S3vdS3fdSSO0RY9q9icnge+ZJPib4D8ZfC7wp4P+JugeJorrwrbyWWnax4buIN0tszA+XNDONuRtGHUgnHIryEADtTgQcikoqwXPTfiB8T9G8QfDbwz8NfBfh690jwt4elnuon1S5W4vbu4mJLySMgCIPmOEQY568CtqH9oPXdF/Z88JfDvwiJtMv9Hurue8vpre2uYrlJnZ1VFlRipXdycDNeMA4GAM0qnnpg0+VC5i9qup6hrmu3WsapOs97dSmaaRY1j3uep2oAo+gAFdx4v+JNl4l+AHw8+HcGl3VvdeFXvnnu5HUx3H2iTeuwDkYHBz+FeeBvl7Yo3rninZCud98H/iNH8MviDJqmqaZJrGgajYXGlazpUbhftlrKhBXJ4yG2sM+hHevVdA/an062+KPiHV/E/gmXV/CtxNZXOhaEkyr/ZMtjhbRlJOBhR8+Opx1r5sLDnHIpBz2pOCY02jpP8AhIbbxF8U28VfECK91O2vtQa+1aKzdUluAzFnjRm4XP3c9l6dBXuA/axs7r4g6hfap8JtAk8O6lY/2HdWUM9x57aWu4RQKDL5AZQcgiMDJbGM5r5szxjoKTI3cdKHFME2j0T4V/EDQ/hl+0NpnjuDTNTvtG0y5nkhtHkjFy0TxyRoGb7m4Bxkjg4OOtdXN+0O2p/CXxf4S1Dw7a6TqWsyk2+teGLC00+SWEsSbW8VEHmxHPJQhsk5z38S3KRwBTDjOOtDinqF2es/Az4v6X8J7/xVLqljrMy65pQ06ObSWgE1s28t5gE4KEjsCCPUVn/Fj4iaJ4+TS5NPv/GN5c2jSKTr6aeiKjAHCC0iTJyBndngcV5o208HFGQDwKOVXuO+lhd3Qc5pGbFNLZPNNJHSncVhTjnmkJBXrTC3PSmlh06UhisBjimdOaQtSMeMZ4pXAa5HY81GcUpIHpUbH0NIaA9aYTSkgnJppPapGJ2phzmlJ4ppNSUAPOKUdabmlyRQA8cGnBuaYDxS0CsSZ7cU4dOtRZNOBJqkxEqnNKp5x0qPcacG44p3FYnBpwbioAx64pxf5gKYicNTiwP1qDdxTs/LTuBOGOKUMcdqgD0oY5p3AnDYPXNOzyQP1qEPRu4zTuBPuO4f0ozg1CCeoNLuyeTRcViYN60u4DoagDHHFGaLhYmLE8ijPFRBtoz1NHmcEUXCxISPSmse4OKYz8UzfzzRcLE271ppcE9xUe/cKZuIPPWlcZMWAHOKaWOeoqJnJ4pue2aVwJC3rxTC3Xk0wt2pCcCkApam5yTTd3PSmk45FK47DiaYTmgnimZpXGKTkcU3Pag8U3PfFSOwHpTT9aXNITzQMSlpuaUGkgFBpwbBpuaM85pgPyc04E5qPPFLmgViTOKXNMyMUZA6U7hYkDe9Oz3qINzS7uadxEobil3nHGKhyCKUNTuFicOaXfzkmoN1KH+XFFxWJzIMjHFLvwKr7+eKXd2p3CxYEh7Gl8yq4f0o3nuaLhYtK3PBo34HFVxJigyelFwsTeYc0CQZqAvxyKaXwOBRcLFpnGKjzk4BqISZGMUhf0FFwsTb8DGcU3f61FuGOetBYUrhYkL8Zpu4mmFumKaWHSlcdiQsSaax44pmRQTxSuFh26kz1pmaXd1NFx2DdSE5pCaQNSGKTSE0HmkNACc5oNJnijmkwEBpe9FFIAAp1FFMBCcClzxRRTAOppQaKKAFBpfoaKKAAE4oHWiigB3JNICc8UUUXJD0pc4ooouNAGOaUk4oop3EJu7U7nGfSiimAmTjmgnJNFFK4CDrQSc0UUrjsBOTz1puaKKADPPSgnBoooGJnNGTiiigBC3tSD1oooAU8UmeKKKAEyc0E0UUgE7UEUUUgP/Z" style="width:120px;height:auto;margin-top:4px"></div>
-    <div class="ltitle">CNM Software</div>
-    <div class="lsub">Sistema Escolar</div>
-    <div style="display:flex;align-items:center;justify-content:center;gap:6px;margin-top:8px">
-      <svg width="16" height="16" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <circle cx="16" cy="16" r="16" fill="#25D366"/>
-        <path d="M23.5 8.5C21.7 6.7 19.4 5.7 16.9 5.7C11.8 5.7 7.6 9.9 7.6 15C7.6 16.7 8.1 18.4 9 19.8L7.5 25L12.8 23.5C14.2 24.3 15.5 24.7 16.9 24.7C22 24.7 26.2 20.5 26.2 15.4C26.3 12.9 25.3 10.3 23.5 8.5ZM16.9 23C15.6 23 14.4 22.6 13.3 22L13 21.8L9.9 22.6L10.7 19.6L10.5 19.3C9.7 18.1 9.3 16.8 9.3 15.4C9.3 10.9 13 7.2 17.5 7.2C19.6 7.2 21.6 8 23.1 9.5C24.6 11 25.4 13 25.4 15.1C25.4 19.6 21.4 23 16.9 23ZM21.4 17.4C21.1 17.2 19.7 16.5 19.5 16.4C19.3 16.3 19.1 16.3 19 16.5C18.8 16.8 18.3 17.4 18.1 17.6C18 17.8 17.8 17.8 17.5 17.6C16.2 17 15.3 16.5 14.4 15C14.2 14.7 14.5 14.7 14.8 14.1C14.9 13.9 14.8 13.8 14.8 13.6C14.7 13.4 14.2 12 14 11.5C13.8 11.1 13.6 11.1 13.4 11.1H13C12.8 11.1 12.5 11.2 12.3 11.4C12.1 11.6 11.4 12.3 11.4 13.7C11.4 15.1 12.3 16.4 12.5 16.6C12.7 16.8 14.2 19.1 16.5 20.3C18.3 21.1 19 21.2 19.9 21C20.4 20.9 21.5 20.2 21.7 19.5C21.9 18.7 21.9 18.1 21.8 18C21.7 17.7 21.6 17.6 21.4 17.4Z" fill="white"/>
-      </svg>
-      <span style="font-size:12px;color:#25D366;font-weight:600;letter-spacing:.3px">+56 9 7896 2079</span>
-    </div>
-    <!-- Lista de usuarios creados -->
-    <div id="login-usuarios-lista" style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px;max-height:220px;overflow-y:auto"></div>
-    <!-- Usuario seleccionado (oculto, solo para referencia interna) -->
-    <input id="lu" type="hidden">
+<div id="login-panel" style="display:flex;align-items:center;justify-content:center;min-height:100vh;background:#F4F5F7;padding:20px">
+  <div style="width:100%;max-width:360px;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 2px 16px rgba(0,0,0,.08)">
+    <div style="height:4px;background:#C9A84C"></div>
+    <div style="padding:32px 28px">
 
-    <!-- Contraseña — se muestra al seleccionar usuario -->
-    <div id="login-pass-wrap" style="display:none">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
-        <div id="login-user-badge" style="flex:1;background:#F4F5F7;border-radius:8px;padding:8px 12px;font-size:13px;font-weight:700;color:#111;display:flex;align-items:center;gap:8px">
-          <span id="login-user-icon" style="font-size:18px">👤</span>
-          <span id="login-user-nombre"></span>
-        </div>
-        <button onclick="loginCambiarUsuario()" style="background:none;border:1px solid var(--border);border-radius:8px;padding:7px 10px;font-size:11px;color:var(--text3);cursor:pointer;white-space:nowrap;font-family:'Nunito',sans-serif">
+      <!-- Logo -->
+      <div style="text-align:center;margin-bottom:28px">
+        <div style="font-size:26px;font-weight:900;color:#8B6914;font-family:Rajdhani,sans-serif;letter-spacing:1px">CNM SOFTWARE</div>
+        <div style="font-size:12px;color:#aaa;margin-top:2px">Sistema Escolar v60</div>
+      </div>
+
+      <!-- Tarjetas de acceso -->
+      <div id="login-cards" style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px">
+
+        <!-- Admin -->
+        <button onclick="loginElegir('admin','ADMINISTRADOR','','0000',true)"
+          style="display:flex;align-items:center;gap:12px;background:#FDF3DC;border:1.5px solid #C9A84C;border-radius:12px;padding:12px 16px;cursor:pointer;width:100%;text-align:left;transition:all .15s"
+          onmouseover="this.style.borderColor='#8B6914'" onmouseout="this.style.borderColor='#C9A84C'">
+          <div style="width:40px;height:40px;border-radius:50%;background:#C9A84C;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">👑</div>
+          <div>
+            <div style="font-size:14px;font-weight:700;color:#8B6914">Administrador</div>
+            <div style="font-size:11px;color:#BA7517">Acceso total al sistema</div>
+          </div>
+          <div style="margin-left:auto;color:#C9A84C;font-size:20px">›</div>
+        </button>
+
+        <!-- Colegio Maipú -->
+        <button onclick="loginElegir('COLEGIO MAIPU PRE BASICA','COLEGIO MAIPU','PRE BASICA','1234',false)"
+          style="display:flex;align-items:center;gap:12px;background:#E8F0FE;border:1.5px solid #1F6FEB;border-radius:12px;padding:12px 16px;cursor:pointer;width:100%;text-align:left;transition:all .15s"
+          onmouseover="this.style.borderColor='#0C447C'" onmouseout="this.style.borderColor='#1F6FEB'">
+          <div style="width:40px;height:40px;border-radius:50%;background:#1F6FEB;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🏫</div>
+          <div style="flex:1">
+            <div style="font-size:14px;font-weight:700;color:#185FA5">Colegio Maipú</div>
+            <div style="display:flex;gap:4px;margin-top:4px">
+              <span style="font-size:10px;background:#E8F0FE;color:#1F6FEB;border:1px solid #85B7EB;border-radius:8px;padding:1px 6px;font-weight:700">PRE BÁSICA</span>
+              <span style="font-size:10px;background:#E6F4EC;color:#1A6B3A;border:1px solid #97C459;border-radius:8px;padding:1px 6px;font-weight:700">BÁSICA</span>
+              <span style="font-size:10px;background:#FAEEDA;color:#8B6914;border:1px solid #EF9F27;border-radius:8px;padding:1px 6px;font-weight:700">MEDIA</span>
+            </div>
+          </div>
+          <div style="margin-left:auto;color:#1F6FEB;font-size:20px">›</div>
+        </button>
+      </div>
+
+      <!-- Campo contraseña (aparece al elegir) -->
+      <div id="login-pwd-wrap" style="display:none;margin-bottom:14px">
+        <div id="login-quien" style="background:#F4F5F7;border-radius:10px;padding:10px 14px;font-size:13px;font-weight:700;color:#111;margin-bottom:12px;display:flex;align-items:center;gap:8px"></div>
+        <div style="font-size:11px;font-weight:700;color:#888;letter-spacing:.5px;margin-bottom:6px">CONTRASEÑA</div>
+        <input id="login-pwd-input" type="password" placeholder="••••"
+          style="width:100%;padding:13px;border:1.5px solid #DDE0E4;border-radius:10px;font-size:18px;font-family:Nunito,sans-serif;box-sizing:border-box;outline:none;letter-spacing:4px"
+          onkeydown="if(event.key==='Enter')loginEntrar()"
+          onfocus="this.style.borderColor='#C9A84C'"
+          onblur="this.style.borderColor='#DDE0E4'">
+        <button onclick="loginVolverCards()"
+          style="width:100%;margin-top:8px;padding:8px;background:none;border:1px solid #DDE0E4;border-radius:8px;color:#888;font-size:12px;cursor:pointer;font-family:Nunito,sans-serif">
           ← Volver
         </button>
       </div>
-      <div class="frow" style="margin-bottom:6px">
-        <label class="fl">CONTRASEÑA</label>
-        <input id="lp" class="fi" type="password" autocomplete="current-password"
-               placeholder="••••"
-               onkeydown="if(event.key==='Enter')login()">
-      </div>
-    </div>
 
-    <div id="lmsg" style="font-size:12px;color:#ff6b6b;min-height:18px;padding:3px 0 8px"></div>
-    <button id="login-btn" class="bp" onclick="login()" style="width:100%;padding:13px;font-size:14px;display:none">→ INGRESAR AL SISTEMA</button>
-    <button onclick="resetCredenciales()" style="width:100%;margin-top:10px;padding:10px;background:none;border:1px solid var(--border);border-radius:8px;color:var(--text3);font-size:12px;cursor:pointer;font-family:'Nunito',sans-serif">
-      🔑 Olvidé mi contraseña / Restablecer acceso
-    </button>
-    <button onclick="window.location.reload(true)" style="width:100%;margin-top:8px;padding:10px;background:#E8F0FE;border:1px solid #1F6FEB;border-radius:8px;color:#1F6FEB;font-size:12px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif">
-      🔄 Actualizar app
-    </button>
-    <div style="text-align:center;font-size:10px;color:var(--text3);margin-top:14px">CNM Software © 2025</div>
+      <!-- Error -->
+      <div id="login-msg" style="font-size:12px;color:#E24B4A;min-height:18px;margin-bottom:8px;text-align:center"></div>
+
+      <!-- Botón entrar -->
+      <button id="login-btn-entrar" onclick="loginEntrar()"
+        style="display:none;width:100%;background:#8B6914;color:#fff;border:none;border-radius:10px;padding:14px;font-size:15px;font-weight:700;cursor:pointer;font-family:Rajdhani,sans-serif;letter-spacing:.5px">
+        → INGRESAR
+      </button>
+
+      <!-- Olvidé clave -->
+      <button onclick="resetCredenciales()"
+        style="width:100%;margin-top:12px;padding:9px;background:none;border:1px solid #EEE;border-radius:8px;color:#bbb;font-size:11px;cursor:pointer;font-family:Nunito,sans-serif">
+        🔑 Olvidé mi contraseña
+      </button>
+      <button onclick="window.location.reload(true)"
+        style="width:100%;margin-top:8px;padding:9px;background:#E8F0FE;border:1px solid #1F6FEB;border-radius:8px;color:#1F6FEB;font-size:11px;font-weight:700;cursor:pointer;font-family:Nunito,sans-serif">
+        🔄 Actualizar app
+      </button>
+
+      <div style="text-align:center;font-size:10px;color:#ddd;margin-top:14px">CNM Software © 2025 · v60</div>
+    </div>
   </div>
 </div>
 
@@ -457,7 +491,7 @@ textarea.fi{resize:none;min-height:75px}
     <button id="hbtn" onclick="toggleSB()">☰</button>
     <div id="logo-circle"><img src="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAUDBAQEAwUEBAQFBQUGBwwIBwcHBw8LCwkMEQ8SEhEPERETFhwXExQaFRERGCEYGh0dHx8fExciJCIeJBweHx7/2wBDAQUFBQcGBw4ICA4eFBEUHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh7/wAARCAAoAFADASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwD5CVakVM0IKsRoPStkiGxixZ7VIsHFbHhjQdV8Ra1a6Loenz3+oXTbYbeEZZiBk9eAAASScAAV3V78FPH1hb3E95Z6NEtsjPMp12zLqFBLfKJM5GDx1q7JEnmAg9qX7OPSu+8X/DjxV4O0Ww1rxF4eu4tNv0V7e6SeNojuUMoYpu2Eg5AbBNdDpXwg8b3rxR2fgKG8km0yPVI1/tobntnJCMArDkkY29faqailuSpNu1jx4wUxocdq9J8C+DdS8c67NougeB7y4vLdS1wsGpmHyADg7zOpVTnjBwSQfQ1meL/CUWk6TbaxZ3kk1rPM9u8FzGI7iCVGZWU7SVdcqcOpweOBmnGm535VtqyKleFNxU3bmdl5vscI0eKhda0JVqrKtZNGyYkdWYjVNWqeN6EwZ3/wy16Lw1q9jrNlIv22FpEuYWnEDyRMMDypD8oI64PU1p6hongG8+0zWuj+N2uZ97L8tnKvmNkjLK2SMnr1xXmisCpHqK6J/ErSLODouhqZrVLZitkBgKrLvHPDHfkn1VD1HPQ5wla8fudv0Zz+zqRb5Zaeav8Aqj1bUfFfjm/vLKHTdI1290ZtMisdS07U0jWG4C5zgFiBgHhuvrXRaj4ju7H7S9rqkvhxRoK6baNfa3YJJEyuzJwkzPtGRyAWyOleCXPiCeeW5kax0pPtHkgoljGFjETArtGOM4w394ZzVm78UG4kuXHh/wAO24uLVrUpb6eI1jUknemD8sn3QH6gKPVt2TS6GseZfE/6+9npkHxXu9J1G3u/+Ewg+0vL5+pHRNNZ1v7jYUEsryeWGwuMABhnmvNvGPiq71+QxlfKtVcsoZt8knPBZsAD12qAAfU81FqHiue8hu4n0nRYvtNvHblobIRtGEZiGUg8Md2Ce4A9K52SSmpNJpPcUoRk1JrVbeQ2U1UlPNSSSCq0jVDZokRg09XxRRUIoesuO9SCbFFFNMTQ4T0puKKKdxWGNP70xpSaKKTbHYjZ80xjRRSGf//Z" alt="CNM" style="width:100%;height:100%;object-fit:cover;border-radius:50%"></div>
     <div class="top-names" style="flex:1;min-width:0;overflow:hidden">
-      <div class="top-school" id="tschool" style="font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">ESCUELA MARIO BAEZA</div>
+      <div class="top-school" id="tschool" style="font-size:16px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:.3px">ESCUELA MARIO BAEZA</div>
       <div class="top-sys" style="font-size:10px;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">CNM Software · Sistema Escolar</div>
     </div>
     <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex-shrink:0">
@@ -467,7 +501,7 @@ textarea.fi{resize:none;min-height:75px}
           style="background:none;border:1px solid #C9A84C;border-radius:6px;color:#C9A84C;font-size:14px;cursor:pointer;padding:2px 6px;flex-shrink:0;line-height:1">⛶</button>
       </div>
       <!-- Selector de nivel (visible solo cuando hay múltiples niveles) -->
-      <div id="nivel-selector" style="display:none;align-items:center;gap:3px;flex-wrap:wrap;justify-content:flex-end"></div>
+      <div id="nivel-selector" style="display:none;align-items:center;gap:5px;flex-wrap:wrap;justify-content:flex-end"></div>
       <span id="user-badge" style="display:none;background:#E8F0FE;color:#1F6FEB;border:1px solid #1F6FEB;border-radius:20px;padding:2px 8px;font-size:10px;font-weight:700;font-family:'Rajdhani',sans-serif;white-space:nowrap;max-width:120px;overflow:hidden;text-overflow:ellipsis"></span>
     </div>
   </div>
@@ -2737,9 +2771,6 @@ async function importar(){
   const inp=document.getElementById('importInput');
   inp.value=''; inp.click();
 }
-  inp.value=''; // limpiar selección anterior
-  inp.click();
-}
 
 async function onImportFile(e){
   const f=e.target.files[0];if(!f)return;
@@ -3469,32 +3500,52 @@ function _actualizarSelectorNivel(){
   const wrap = document.getElementById('nivel-selector');
   if(!wrap) return;
   const grupo = _usuarioActual?._grupoUsuarios;
-  // Solo mostrar si hay más de 1 nivel en el grupo
-  if(!grupo || grupo.length <= 1 || (_usuarioActual&&_usuarioActual.esAdmin)){
+  if(!grupo || grupo.length <= 1){
     wrap.style.display='none';
     return;
   }
   const nivelOrd={'PRE BASICA':1,'BASICA':2,'MEDIA':3};
+  const colNivel={
+    'PRE BASICA':['#E8F0FE','#185FA5','#1F6FEB','#85B7EB'],
+    'BASICA':    ['#E6F4EC','#1A6B3A','#1A6B3A','#97C459'],
+    'MEDIA':     ['#FAEEDA','#8B6914','#8B6914','#EF9F27']
+  };
   const ordenados=[...grupo].sort((a,b)=>(nivelOrd[a.nivel]||9)-(nivelOrd[b.nivel]||9));
   wrap.innerHTML='';
-  wrap.style.display='flex';
+  wrap.style.cssText='display:flex;align-items:center;gap:4px;flex-wrap:wrap';
   ordenados.forEach(u=>{
     const activo = _usuarioActual && _usuarioActual.id===u.id;
-    const [bg,col,bdr]=(_colNivelTop[u.nivel]||'#F1EFE8|#5F5E5A|#B4B2A9').split('|');
+    const [bg,txt,brd,bdrL]=colNivel[u.nivel]||['#F1EFE8','#5F5E5A','#888780','#B4B2A9'];
     const btn=document.createElement('button');
-    btn.textContent = u.nivel||u.usuario;
+    const label = u.nivel||u.usuario;
+    btn.textContent = label;
     btn.style.cssText=[
       `background:${activo?bg:'transparent'}`,
-      `color:${activo?col:'#888'}`,
-      `border:1.5px solid ${activo?bdr:'#DDE0E4'}`,
-      'border-radius:20px;padding:1px 9px;font-size:10px;font-weight:700',
-      'cursor:pointer;white-space:nowrap;font-family:Rajdhani,sans-serif',
-      `opacity:${activo?1:0.7}`,
+      `color:${activo?txt:'#999'}`,
+      `border:${activo?'2px':'1.5px'} solid ${activo?brd:'#DDE0E4'}`,
+      'border-radius:20px',
+      `padding:${activo?'6px 18px':'5px 16px'}`,
+      'font-size:13px;font-weight:800',
+      'cursor:pointer;white-space:nowrap',
+      'font-family:Rajdhani,sans-serif;letter-spacing:.5px',
+      `opacity:${activo?1:0.65}`,
       'transition:all .15s'
     ].join(';');
-    if(!activo){
-      btn.addEventListener('mouseenter',()=>{btn.style.opacity='1';btn.style.borderColor=bdr;btn.style.color=col;});
-      btn.addEventListener('mouseleave',()=>{btn.style.opacity='0.7';btn.style.borderColor='#DDE0E4';btn.style.color='#888';});
+    if(activo){
+      btn.title='Nivel activo';
+    } else {
+      btn.addEventListener('mouseenter',()=>{
+        btn.style.opacity='1';
+        btn.style.borderColor=brd;
+        btn.style.color=txt;
+        btn.style.background=bg;
+      });
+      btn.addEventListener('mouseleave',()=>{
+        btn.style.opacity='0.65';
+        btn.style.borderColor='#DDE0E4';
+        btn.style.color='#999';
+        btn.style.background='transparent';
+      });
       btn.addEventListener('click',()=>cambiarNivel(u));
     }
     wrap.appendChild(btn);
@@ -3582,28 +3633,27 @@ function toast(msg,type='i'){
 async function _crearColegioEjemplo(){
   try{
     const todos = await iallA('usuarios');
-    // Solo crear si no existe ninguno con colegio_grupo = 'COLEGIO MAIPU'
-    const yaExiste = todos.some(u=>u.colegio_grupo==='COLEGIO MAIPU');
-    if(yaExiste) return;
-
-    const niveles = [
+    const nivelesDef = [
       {nombre:'COLEGIO MAIPU PRE BASICA', nivel:'PRE BASICA', pwd:'1234'},
       {nombre:'COLEGIO MAIPU BASICA',     nivel:'BASICA',     pwd:'1234'},
       {nombre:'COLEGIO MAIPU MEDIA',      nivel:'MEDIA',      pwd:'1234'},
     ];
-    for(const n of niveles){
-      await iputA('usuarios',{
-        usuario:       n.nombre,
-        password:      n.pwd,
-        nombre_colegio:n.nombre,
-        colegio_grupo: 'COLEGIO MAIPU',
-        nivel:         n.nivel,
-        esAdmin:       false,
-        creado:        new Date().toISOString(),
-        _ejemplo:      true   // marca para saber que es demo
-      });
+    for(const n of nivelesDef){
+      const yaExiste = todos.some(u=>u.usuario===n.nombre);
+      if(!yaExiste){
+        await iputA('usuarios',{
+          usuario:       n.nombre,
+          password:      n.pwd,
+          nombre_colegio:n.nombre,
+          colegio_grupo: 'COLEGIO MAIPU',
+          nivel:         n.nivel,
+          esAdmin:       false,
+          creado:        new Date().toISOString(),
+          _ejemplo:      true
+        });
+        console.log('✓ Creado:', n.nombre);
+      }
     }
-    console.log('✓ Colegio de ejemplo COLEGIO MAIPU creado (3 bases)');
   }catch(e){
     console.warn('_crearColegioEjemplo:',e);
   }
@@ -3615,17 +3665,29 @@ async function _crearColegioEjemplo(){
 let _loginGrupoActual = null; // usuarios del grupo seleccionado
 
 async function loginCargarUsuarios(){
+  // Esta funcion ya no controla el UI del login (reemplazado por loginElegir)
+  // Solo asegura que la BD tenga los datos correctos
   try{
     if(!dbAdmin) await openAdminDB();
     await asegurarAdminMaestro();
     await _crearColegioEjemplo();
-
     const todos = await iallA('usuarios');
+    console.log('[CNM] Usuarios en BD:', todos.length, todos.map(u=>u.usuario));
     const lista = document.getElementById('login-usuarios-lista');
-    lista.innerHTML = '';
+    if(!lista) return; // nuevo login no tiene este elemento
 
     if(!todos.length){
-      lista.innerHTML=`<div style="text-align:center;color:#aaa;font-size:13px;padding:12px">Sin usuarios registrados.<br>Toca <strong>Restablecer acceso</strong>.</div>`;
+      lista.innerHTML=`
+        <div style="background:#FDF3DC;border-radius:10px;padding:14px 16px;border:1.5px solid #C9A84C;text-align:center">
+          <div style="font-size:13px;font-weight:700;color:#8B6914;margin-bottom:8px">🔑 ACCESO INICIAL</div>
+          <div style="font-size:12px;color:#6B4F0A;line-height:1.8">
+            Usuario: <strong>admin</strong><br>
+            Contraseña: <strong>0000</strong>
+          </div>
+          <button onclick="loginInicioDirecto()" style="margin-top:10px;width:100%;background:#8B6914;color:#fff;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:Rajdhani,sans-serif">
+            → INGRESAR COMO ADMIN
+          </button>
+        </div>`;
       return;
     }
 
@@ -3694,119 +3756,10 @@ async function loginCargarUsuarios(){
 }
 
 // Paso 2: el usuario tocó un colegio → pedir solo la clave
-function loginSeleccionarGrupo(grupo, usuarios){
-  _loginGrupoActual = usuarios;
-  // Poner el primer usuario como referencia para validar la clave
-  document.getElementById('lu').value = usuarios[0].usuario;
-  document.getElementById('login-user-nombre').textContent = grupo;
-  document.getElementById('login-user-icon').textContent   = usuarios.some(u=>u.esAdmin)?'👑':'🏫';
-  document.getElementById('login-usuarios-lista').style.display = 'none';
-  document.getElementById('login-pass-wrap').style.display       = '';
-  document.getElementById('login-btn').style.display             = '';
-  const lp=document.getElementById('lp');
-  lp.value='';
-  setTimeout(()=>lp.focus(),80);
-}
+function loginSeleccionarGrupo(grupo, usuarios){ /* reemplazado por loginElegir */ }
+function loginCambiarUsuario(){ loginVolverCards(); }
 
-function loginCambiarUsuario(){
-  _loginGrupoActual = null;
-  document.getElementById('lu').value                           = '';
-  document.getElementById('login-pass-wrap').style.display      = 'none';
-  document.getElementById('login-btn').style.display            = 'none';
-  document.getElementById('login-usuarios-lista').style.display = '';
-  document.getElementById('lmsg').textContent                   = '';
-}
-
-async function login(){
-  const u=document.getElementById('lu').value.trim();
-  const p=document.getElementById('lp').value.trim();
-  const msg=document.getElementById('lmsg');
-  msg.style.color='#C9A84C';
-  msg.textContent='⏳ Iniciando…';
-  try{
-    if(!dbAdmin){
-      msg.textContent='⏳ Abriendo base de datos…';
-      for(let i=0;i<3;i++){
-        try{await openAdminDB();break;}
-        catch(e){
-          await new Promise(r=>setTimeout(r,400*(i+1)));
-          if(i===2) throw new Error('No se pudo abrir la base de datos. Toca Actualizar app.');
-        }
-      }
-    }
-    msg.textContent='⏳ Preparando…';
-    await asegurarAdminMaestro();
-    await new Promise(r=>setTimeout(r,500));
-    msg.textContent='⏳ Verificando…';
-
-    // Validar clave — si hay grupo, basta que UNO del grupo tenga esa clave
-    let usr = null;
-    if(_loginGrupoActual && _loginGrupoActual.length){
-      // Buscar el primer usuario del grupo cuya clave coincida
-      for(const candidate of _loginGrupoActual){
-        const dbUsr = await getUsuarioPorNombre(candidate.usuario);
-        if(dbUsr && dbUsr.password === p){ usr = dbUsr; break; }
-      }
-      if(!usr){
-        // Todos los del grupo tienen clave incorrecta
-        msg.style.color='#ff6b6b';
-        msg.textContent='⚠ Contraseña incorrecta';
-        document.getElementById('lp').value='';
-        document.getElementById('lp').focus();
-        return;
-      }
-    } else {
-      // Flujo normal (admin u/sin grupo)
-      usr = await getUsuarioPorNombre(u);
-      if(!usr){
-        const todos=await iallA('usuarios');
-        msg.style.color='#ff6b6b';
-        msg.textContent=todos.length===0?'⚠ BD vacía — toca Restablecer acceso':`⚠ Usuario "${u}" no encontrado`;
-        document.getElementById('lp').value='';
-        return;
-      }
-      if(usr.password!==p){
-        msg.style.color='#ff6b6b';
-        msg.textContent='⚠ Contraseña incorrecta';
-        document.getElementById('lp').value='';
-        document.getElementById('lp').focus();
-        return;
-      }
-    }
-
-    _usuarioActual={
-      id:usr.id, usuario:usr.usuario,
-      nombre_colegio:usr.nombre_colegio||'',
-      colegio_grupo: usr.colegio_grupo||'',
-      nivel:         usr.nivel||'',
-      esAdmin:!!usr.esAdmin,
-      dbName:usr.esAdmin?'cnm_v4_admin':`${DBN_PREFIX}${usr.id}`,
-      _pwd:usr.password||'0000',
-      _grupoUsuarios: _loginGrupoActual||null
-    };
-    db=null;
-    await openDB(_usuarioActual.dbName);
-    if(_usuarioActual.nombre_colegio){
-      const cfgNom=await gcfg('nombre_colegio');
-      if(!cfgNom||cfgNom===DCFG.nombre_colegio) await scfg('nombre_colegio',_usuarioActual.nombre_colegio);
-    }
-    localStorage.setItem('cnm_setup_done','1');
-    msg.textContent='';
-    document.getElementById('login-panel').style.display='none';
-    await refreshUI();
-    // Mostrar selector de nivel si el grupo tiene más de un nivel
-    _actualizarSelectorNivel();
-    const btnGU=document.getElementById('btn-gest-usuarios');
-    if(btnGU) btnGU.style.display=_usuarioActual.esAdmin?'flex':'none';
-    const tabBtn=document.getElementById('tab-usuarios-btn');
-    if(tabBtn) tabBtn.style.display=_usuarioActual.esAdmin?'flex':'none';
-    toast(`✓ Bienvenido — ${_usuarioActual.colegio_grupo||_usuarioActual.usuario}${_usuarioActual.nivel?' · '+_usuarioActual.nivel:''}`,'s');
-  }catch(err){
-    msg.style.color='#ff6b6b';
-    msg.textContent='⚠ '+err.message;
-    console.error('login error:',err);
-  }
-}
+async function login(){ /* reemplazado por loginEntrar */ }
 
 async function resetCredenciales(){
   if(!confirm('¿Restablecer acceso admin a "0000"?'))return;
@@ -3844,18 +3797,14 @@ async function cerrarSesion(){
   if(!ok)return;
   if(_usuarioActual&&_agPendiente) await autoguardarSilencioso();
   _usuarioActual=null;
+  _loginUsuarioActual=null;
   db=null;
   // Resetear login visual
-  document.getElementById('lu').value='';
-  document.getElementById('lp').value='';
-  document.getElementById('lmsg').textContent='';
-  document.getElementById('lmsg').style.color='';
-  document.getElementById('login-pass-wrap').style.display='none';
-  document.getElementById('login-btn').style.display='none';
-  document.getElementById('login-usuarios-lista').style.display='';
+  loginVolverCards();
+  document.getElementById('login-pwd-input').value='';
+  document.getElementById('login-msg').textContent='';
   document.getElementById('login-panel').style.display='flex';
   closeSB();
-  loginCargarUsuarios();
   toast('✓ Sesión cerrada','s');
 }
 
@@ -3929,6 +3878,198 @@ async function restaurarAutoguardado(){
   }catch(e){ console.warn('Restaurar autoguardado:',e); }
 }
 
+// ══ NUEVO LOGIN SIMPLIFICADO ══
+function loginElegirGrupo(){
+  document.getElementById('login-cards').style.display='none';
+  document.getElementById('login-nivel-wrap').style.display='block';
+  document.getElementById('login-pwd-wrap').style.display='none';
+  document.getElementById('login-btn-entrar').style.display='none';
+  document.getElementById('login-msg').textContent='';
+}
+
+function loginVolverCards(){
+  _loginUsuarioActual=null;
+  document.getElementById('login-cards').style.display='flex';
+  document.getElementById('login-nivel-wrap').style.display='none';
+  document.getElementById('login-pwd-wrap').style.display='none';
+  document.getElementById('login-btn-entrar').style.display='none';
+  document.getElementById('login-msg').textContent='';
+}
+
+function loginElegir(usuario, grupo, nivel, pwd, esAdmin){
+  try{
+    _loginUsuarioActual = {usuario:usuario, grupo:grupo, nivel:nivel, pwd:pwd, esAdmin:esAdmin};
+    var cards = document.getElementById('login-cards');
+    var pwdWrap = document.getElementById('login-pwd-wrap');
+    var btnEntrar = document.getElementById('login-btn-entrar');
+    var msg = document.getElementById('login-msg');
+    var quien = document.getElementById('login-quien');
+    var nivelWrap = document.getElementById('login-nivel-wrap');
+    if(cards) cards.style.display='none';
+    if(nivelWrap) nivelWrap.style.display='none';
+    if(pwdWrap) pwdWrap.style.display='block';
+    if(btnEntrar) btnEntrar.style.display='block';
+    if(msg) msg.textContent='';
+    var label = nivel ? grupo+' · '+nivel : grupo;
+    if(quien) quien.textContent = (esAdmin?'👑 ':'🏫 ')+label;
+    setTimeout(function(){
+      var inp = document.getElementById('login-pwd-input');
+      if(inp) inp.focus();
+    }, 100);
+  }catch(err){
+    console.error('loginElegir error:', err);
+    alert('Error: '+err.message);
+  }
+}
+
+async function loginEntrar(){
+  const msg = document.getElementById('login-msg');
+  if(!_loginUsuarioActual){ msg.textContent='⚠ Selecciona una opción'; return; }
+  const pwdIngresada = document.getElementById('login-pwd-input').value.trim();
+  if(!pwdIngresada){ msg.textContent='⚠ Ingresa tu contraseña'; return; }
+  if(pwdIngresada !== _loginUsuarioActual.pwd){
+    msg.textContent='⚠ Contraseña incorrecta';
+    document.getElementById('login-pwd-input').value='';
+    document.getElementById('login-pwd-input').focus();
+    return;
+  }
+  msg.textContent='';
+  try{
+    if(!dbAdmin) await openAdminDB();
+    await asegurarAdminMaestro();
+    await _crearColegioEjemplo();
+    const usr = await getUsuarioPorNombre(_loginUsuarioActual.usuario);
+    let usrId, dbName;
+    if(usr){
+      usrId  = usr.id;
+      dbName = _loginUsuarioActual.esAdmin ? 'cnm_v4_admin' : (DBN_PREFIX+usr.id);
+    } else {
+      // Crear usuario si no existe
+      usrId = await iputA('usuarios',{
+        usuario:        _loginUsuarioActual.usuario,
+        password:       _loginUsuarioActual.pwd,
+        nombre_colegio: _loginUsuarioActual.nivel
+          ? _loginUsuarioActual.grupo+' '+_loginUsuarioActual.nivel
+          : _loginUsuarioActual.grupo,
+        colegio_grupo:  _loginUsuarioActual.grupo,
+        nivel:          _loginUsuarioActual.nivel,
+        esAdmin:        _loginUsuarioActual.esAdmin,
+        creado:         new Date().toISOString(),
+        _ejemplo:       !_loginUsuarioActual.esAdmin
+      });
+      dbName = _loginUsuarioActual.esAdmin ? 'cnm_v4_admin' : (DBN_PREFIX+usrId);
+    }
+    // Cargar grupo de niveles para el selector interno
+    let grupoUsuarios = null;
+    if(_loginUsuarioActual.grupo && !_loginUsuarioActual.esAdmin){
+      const todos = await iallA('usuarios');
+      grupoUsuarios = todos.filter(u=>u.colegio_grupo===_loginUsuarioActual.grupo && !u.esAdmin);
+      if(grupoUsuarios.length<=1) grupoUsuarios=null;
+    }
+    _usuarioActual = {
+      id:             usrId,
+      usuario:        _loginUsuarioActual.usuario,
+      nombre_colegio: _loginUsuarioActual.nivel
+        ? _loginUsuarioActual.grupo+' '+_loginUsuarioActual.nivel
+        : _loginUsuarioActual.grupo,
+      colegio_grupo:  _loginUsuarioActual.grupo,
+      nivel:          _loginUsuarioActual.nivel,
+      esAdmin:        _loginUsuarioActual.esAdmin,
+      dbName:         dbName,
+      _pwd:           _loginUsuarioActual.pwd,
+      _grupoUsuarios: grupoUsuarios
+    };
+    db=null;
+    await openDB(_usuarioActual.dbName);
+    localStorage.setItem('cnm_setup_done','1');
+    document.getElementById('login-panel').style.display='none';
+    await refreshUI();
+    _actualizarSelectorNivel();
+    const btnGU=document.getElementById('btn-gest-usuarios');
+    if(btnGU) btnGU.style.display=_loginUsuarioActual.esAdmin?'flex':'none';
+    const tabBtn=document.getElementById('tab-usuarios-btn');
+    if(tabBtn) tabBtn.style.display=_loginUsuarioActual.esAdmin?'flex':'none';
+    toast('✓ Bienvenido — '+(_loginUsuarioActual.nivel||_loginUsuarioActual.grupo),'s');
+  }catch(e){
+    msg.textContent='⚠ '+e.message;
+    console.error('loginEntrar:',e);
+  }
+}
+// ══ FIN NUEVO LOGIN ══
+
+async function loginDirecto(){
+  const usuario = document.getElementById('login-direct-user').value.trim();
+  const pwd     = document.getElementById('login-direct-pwd').value.trim();
+  const msg     = document.getElementById('lmsg');
+  if(!usuario){ msg.textContent='⚠ Ingresa usuario'; return; }
+  try{
+    if(!dbAdmin) await openAdminDB();
+    await asegurarAdminMaestro();
+    const usr = await getUsuarioPorNombre(usuario);
+    if(!usr){ msg.textContent='⚠ Usuario no encontrado'; return; }
+    const claveOk = (usr.password||'0000');
+    if(pwd !== claveOk){ msg.textContent='⚠ Contraseña incorrecta'; return; }
+    _usuarioActual = {
+      id:            usr.id,
+      usuario:       usr.usuario,
+      nombre_colegio:usr.nombre_colegio||'CNM Software',
+      colegio_grupo: usr.colegio_grupo||'',
+      nivel:         usr.nivel||'',
+      esAdmin:       !!usr.esAdmin,
+      dbName:        usr.esAdmin?'cnm_v4_admin':(DBN_PREFIX+usr.id),
+      _pwd:          claveOk,
+      _grupoUsuarios:null
+    };
+    // Cargar grupo de niveles si el usuario pertenece a un colegio_grupo
+    if(usr.colegio_grupo && !usr.esAdmin){
+      const todosUsr = await iallA('usuarios');
+      const grupo = todosUsr.filter(u => u.colegio_grupo === usr.colegio_grupo && !u.esAdmin);
+      if(grupo.length > 1) _usuarioActual._grupoUsuarios = grupo;
+    }
+    db=null;
+    await openDB(_usuarioActual.dbName);
+    localStorage.setItem('cnm_setup_done','1');
+    msg.textContent='';
+    document.getElementById('login-panel').style.display='none';
+    await refreshUI();
+    _actualizarSelectorNivel();
+    toast('✓ Bienvenido — '+(_usuarioActual.colegio_grupo||_usuarioActual.usuario),'s');
+  }catch(e){
+    msg.textContent='⚠ '+e.message;
+    console.error('loginDirecto:',e);
+  }
+}
+
+async function loginInicioDirecto(){
+  // Login directo con admin/0000 cuando no hay usuarios en BD
+  try{
+    await openAdminDB();
+    await asegurarAdminMaestro();
+    const usr = await getUsuarioPorNombre('admin');
+    if(!usr){ toast('⚠ Error iniciando admin','e'); return; }
+    _usuarioActual = {
+      id: usr.id,
+      usuario: usr.usuario,
+      nombre_colegio: usr.nombre_colegio || 'CNM Software',
+      colegio_grupo: usr.colegio_grupo || '',
+      nivel: usr.nivel || '',
+      esAdmin: true,
+      dbName: 'cnm_v4_admin',
+      _pwd: '0000',
+      _grupoUsuarios: null
+    };
+    db = null;
+    await openDB(_usuarioActual.dbName);
+    localStorage.setItem('cnm_setup_done','1');
+    document.getElementById('login-panel').style.display='none';
+    await refreshUI();
+    toast('✓ Bienvenido admin — puedes cambiar tu clave en Administración','s');
+  }catch(e){
+    toast('⚠ '+e.message,'e');
+    console.error('loginInicioDirecto:',e);
+  }
+}
+
 async function init(){
   // Ocultar barra de direcciones del navegador (múltiples intentos)
   const _hideBar=()=>{ try{ window.scrollTo(0,1); }catch(e){} };
@@ -3940,8 +4081,8 @@ async function init(){
   window.addEventListener('orientationchange', ()=>setTimeout(_hideBar, 300));
   await openAdminDB();
   await asegurarAdminMaestro();
-  // Cargar lista visual de usuarios en el login
-  await loginCargarUsuarios();
+  await _crearColegioEjemplo();
+  // El nuevo login no necesita cargar usuarios dinamicamente
   setInterval(()=>{ if(_usuarioActual&&_agPendiente)autoguardarSilencioso(); },5*60*1000);
   window.addEventListener('beforeunload',()=>{ if(_usuarioActual&&_agPendiente)autoguardarSilencioso(); });
   document.addEventListener('visibilitychange',()=>{ if(document.hidden&&_usuarioActual&&_agPendiente)autoguardarSilencioso(); });
@@ -3960,6 +4101,7 @@ const SYNC_TIMEOUT = 800; // ms por IP al escanear
 const FOTO_SYNC_MAX_PX  = 200;
 const FOTO_SYNC_CALIDAD = 0.65;
 
+let _loginUsuarioActual = null; // usuario elegido en login
 let _syncIP   = null;  // IP del PC encontrado
 let _syncInfo = null;  // datos del /ping
 
