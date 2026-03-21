@@ -398,7 +398,7 @@ textarea.fi{resize:none;min-height:75px}
     <button onclick="iniciarSistema()" style="width:100%;background:#8B6914;color:#fff;border:none;border-radius:10px;padding:15px;font-size:15px;font-weight:700;cursor:pointer;font-family:'Rajdhani',sans-serif;letter-spacing:.5px">
       → COMENZAR A USAR CNM
     </button>
-    <div style="text-align:center;font-size:10px;color:#aaa;margin-top:12px">CNM Software v58 · Esta pantalla solo aparece una vez</div>
+    <div style="text-align:center;font-size:10px;color:#aaa;margin-top:12px">CNM Software v60 · Esta pantalla solo aparece una vez</div>
   </div>
 </div>
 
@@ -414,18 +414,32 @@ textarea.fi{resize:none;min-height:75px}
       </svg>
       <span style="font-size:12px;color:#25D366;font-weight:600;letter-spacing:.3px">+56 9 7896 2079</span>
     </div>
-    <div class="frow" style="margin-bottom:12px">
-      <label class="fl">USUARIO</label>
-      <input id="lu" class="fi" type="text" autocomplete="username" placeholder="admin">
+    <!-- Lista de usuarios creados -->
+    <div id="login-usuarios-lista" style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px;max-height:220px;overflow-y:auto"></div>
+    <!-- Usuario seleccionado (oculto, solo para referencia interna) -->
+    <input id="lu" type="hidden">
+
+    <!-- Contraseña — se muestra al seleccionar usuario -->
+    <div id="login-pass-wrap" style="display:none">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <div id="login-user-badge" style="flex:1;background:#F4F5F7;border-radius:8px;padding:8px 12px;font-size:13px;font-weight:700;color:#111;display:flex;align-items:center;gap:8px">
+          <span id="login-user-icon" style="font-size:18px">👤</span>
+          <span id="login-user-nombre"></span>
+        </div>
+        <button onclick="loginCambiarUsuario()" style="background:none;border:1px solid var(--border);border-radius:8px;padding:7px 10px;font-size:11px;color:var(--text3);cursor:pointer;white-space:nowrap;font-family:'Nunito',sans-serif">
+          ← Volver
+        </button>
+      </div>
+      <div class="frow" style="margin-bottom:6px">
+        <label class="fl">CONTRASEÑA</label>
+        <input id="lp" class="fi" type="password" autocomplete="current-password"
+               placeholder="••••"
+               onkeydown="if(event.key==='Enter')login()">
+      </div>
     </div>
-    <div class="frow" style="margin-bottom:6px">
-      <label class="fl">CONTRASEÑA</label>
-      <input id="lp" class="fi" type="password" autocomplete="current-password"
-             placeholder="0000"
-             onkeydown="if(event.key==='Enter')login()">
-    </div>
+
     <div id="lmsg" style="font-size:12px;color:#ff6b6b;min-height:18px;padding:3px 0 8px"></div>
-    <button class="bp" onclick="login()" style="width:100%;padding:13px;font-size:14px">→ INGRESAR AL SISTEMA</button>
+    <button id="login-btn" class="bp" onclick="login()" style="width:100%;padding:13px;font-size:14px;display:none">→ INGRESAR AL SISTEMA</button>
     <button onclick="resetCredenciales()" style="width:100%;margin-top:10px;padding:10px;background:none;border:1px solid var(--border);border-radius:8px;color:var(--text3);font-size:12px;cursor:pointer;font-family:'Nunito',sans-serif">
       🔑 Olvidé mi contraseña / Restablecer acceso
     </button>
@@ -452,6 +466,8 @@ textarea.fi{resize:none;min-height:75px}
         <button onclick="toggleFullscreen()" title="Pantalla completa"
           style="background:none;border:1px solid #C9A84C;border-radius:6px;color:#C9A84C;font-size:14px;cursor:pointer;padding:2px 6px;flex-shrink:0;line-height:1">⛶</button>
       </div>
+      <!-- Selector de nivel (visible solo cuando hay múltiples niveles) -->
+      <div id="nivel-selector" style="display:none;align-items:center;gap:3px;flex-wrap:wrap;justify-content:flex-end"></div>
       <span id="user-badge" style="display:none;background:#E8F0FE;color:#1F6FEB;border:1px solid #1F6FEB;border-radius:20px;padding:2px 8px;font-size:10px;font-weight:700;font-family:'Rajdhani',sans-serif;white-space:nowrap;max-width:120px;overflow:hidden;text-overflow:ellipsis"></span>
     </div>
   </div>
@@ -539,7 +555,7 @@ textarea.fi{resize:none;min-height:75px}
         <span id="sbinst">ESCUELA MARIO BAEZA · Las Naciones 823, Maipú</span>
         <span id="sb-guard" style="display:flex;align-items:center;gap:5px;font-size:10px;color:#888">
           <span id="sb-dot" style="width:7px;height:7px;border-radius:50%;background:#888;display:inline-block;transition:background .4s"></span>
-          <span id="sb-txt">CNM v58</span>
+          <span id="sb-txt">CNM v60</span>
         </span>
       </div>
     </div>
@@ -799,19 +815,36 @@ textarea.fi{resize:none;min-height:75px}
   <div class="mbody" id="mformusr-body" style="flex:1">
     <input type="hidden" id="fusr-id">
     <div class="fsec">
-      <div class="stitle">🏫 DATOS DEL COLEGIO / USUARIO</div>
+      <div class="stitle">🏫 DATOS DEL COLEGIO</div>
       <div class="frow">
         <label class="fl">NOMBRE DEL COLEGIO</label>
-        <input id="fusr-colegio" class="fi" placeholder="Ej: ESCUELA JUAN ANTONIO RÍOS" oninput="this.value=this.value.toUpperCase()">
-        <span style="font-size:10px;color:#8B6914;margin-top:3px;display:block">Se mostrará en la barra superior cuando el usuario inicie sesión</span>
+        <input id="fusr-colegio" class="fi" placeholder="Ej: COLEGIO MAIPU"
+          oninput="this.value=this.value.toUpperCase().replace(/_/g,' ');syncGrupoDesdeNombre()">
+        <span style="font-size:10px;color:#8B6914;margin-top:3px;display:block">Nombre completo — se muestra en la barra superior al iniciar sesión</span>
+      </div>
+      <div class="frow g2">
+        <div>
+          <label class="fl">GRUPO / COLEGIO BASE</label>
+          <input id="fusr-grupo" class="fi" placeholder="Ej: COLEGIO MAIPU"
+            oninput="this.value=this.value.toUpperCase().replace(/_/g,' ')">
+          <span style="font-size:10px;color:#888;margin-top:3px;display:block">Para agrupar bases del mismo colegio</span>
+        </div>
+        <div>
+          <label class="fl">NIVEL / SECCIÓN</label>
+          <input id="fusr-nivel" class="fi" placeholder="Ej: PRE BASICA"
+            oninput="this.value=this.value.toUpperCase().replace(/_/g,' ')">
+          <span style="font-size:10px;color:#888;margin-top:3px;display:block">PRE BASICA · BASICA · MEDIA</span>
+        </div>
       </div>
     </div>
     <div class="fsec">
       <div class="stitle">🔐 CREDENCIALES DE ACCESO</div>
       <div class="frow">
         <label class="fl">NOMBRE DE USUARIO</label>
-        <input id="fusr-usuario" class="fi" placeholder="Ej: colegio_rios" autocomplete="off">
-        <span style="font-size:10px;color:#888;margin-top:3px;display:block">Mínimo 3 caracteres, sin espacios</span>
+        <input id="fusr-usuario" class="fi" placeholder="Ej: COLEGIO MAIPU BASICA"
+          autocomplete="off"
+          oninput="this.value=this.value.toUpperCase().replace(/_/g,' ')">
+        <span style="font-size:10px;color:#888;margin-top:3px;display:block">Mínimo 3 caracteres · Se guarda en mayúsculas automáticamente</span>
       </div>
       <div class="frow">
         <label class="fl">CONTRASEÑA</label>
@@ -1059,17 +1092,33 @@ textarea.fi{resize:none;min-height:75px}
 
 <!-- ═══ MODAL SYNC WIFI ═══ -->
 <div class="mov" id="msync">
- <div class="modal" style="max-width:420px">
+ <div class="modal" style="max-width:440px">
   <div class="mstripe" style="background:#2ecc71"></div>
   <div class="mhdr">
-   <div class="mtitle" style="color:#2ecc71">↕ SYNC WiFi — PC</div>
+   <div class="mtitle" style="color:#2ecc71">↕ SINCRONIZACIÓN</div>
    <button class="mclose" onclick="closeM('msync')">✕</button>
   </div>
-  <div class="mbody" style="padding:18px">
-   <!-- Codigo 4 digitos -->
+
+  <!-- ── TABS ── -->
+  <div style="display:flex;border-bottom:2px solid #E8E8E8;background:#fff">
+   <button id="stab-pc" onclick="syncTab('pc')"
+    style="flex:1;padding:11px 4px;font-size:11px;font-weight:700;font-family:Rajdhani,sans-serif;border:none;cursor:pointer;background:#fff;color:#2ecc71;border-bottom:2.5px solid #2ecc71;letter-spacing:.3px">
+    🖥️ CON PC
+   </button>
+   <button id="stab-mov" onclick="syncTab('mov')"
+    style="flex:1;padding:11px 4px;font-size:11px;font-weight:700;font-family:Rajdhani,sans-serif;border:none;cursor:pointer;background:#fff;color:#888;border-bottom:2.5px solid transparent;letter-spacing:.3px">
+    📱 DISPOSITIVO A DISP.
+   </button>
+  </div>
+
+  <!-- ══════════════════════════════════
+       PANEL PC  (sin cambios)
+  ══════════════════════════════════ -->
+  <div id="spanel-pc" class="mbody" style="padding:18px">
+   <!-- Codigo 6 digitos -->
    <div style="background:#FDF3DC;border-radius:12px;padding:16px;margin-bottom:10px;border:1px solid #C9A84C;text-align:center">
     <div style="font-size:11px;font-weight:700;color:#8B6914;margin-bottom:10px;letter-spacing:.5px">🔗 INGRESA EL CÓDIGO DEL PC</div>
-    <div style="display:flex;gap:6px;justify-content:center;margin-bottom:12px" id="sync-digitos">
+    <div style="display:flex;gap:6px;align-items:center;justify-content:center;margin-bottom:12px" id="sync-digitos">
      <input type="tel" maxlength="1" class="sync-dig" oninput="syncDigito(this,0)" onkeydown="syncBack(event,this,0)"
       style="width:42px;height:54px;text-align:center;font-size:24px;font-weight:900;font-family:Consolas,monospace;background:#fff;border:2.5px solid #C9A84C;border-radius:10px;outline:none;color:#8B6914">
      <input type="tel" maxlength="1" class="sync-dig" oninput="syncDigito(this,1)" onkeydown="syncBack(event,this,1)"
@@ -1078,6 +1127,7 @@ textarea.fi{resize:none;min-height:75px}
       style="width:42px;height:54px;text-align:center;font-size:24px;font-weight:900;font-family:Consolas,monospace;background:#fff;border:2.5px solid #C9A84C;border-radius:10px;outline:none;color:#8B6914">
      <input type="tel" maxlength="1" class="sync-dig" oninput="syncDigito(this,3)" onkeydown="syncBack(event,this,3)"
       style="width:42px;height:54px;text-align:center;font-size:24px;font-weight:900;font-family:Consolas,monospace;background:#fff;border:2.5px solid #C9A84C;border-radius:10px;outline:none;color:#8B6914">
+     <div style="width:10px;height:3px;background:#C9A84C;border-radius:2px;flex-shrink:0"></div>
      <input type="tel" maxlength="1" class="sync-dig" oninput="syncDigito(this,4)" onkeydown="syncBack(event,this,4)"
       style="width:42px;height:54px;text-align:center;font-size:24px;font-weight:900;font-family:Consolas,monospace;background:#fff;border:2.5px solid #C9A84C;border-radius:10px;outline:none;color:#8B6914">
      <input type="tel" maxlength="1" class="sync-dig" oninput="syncDigito(this,5)" onkeydown="syncBack(event,this,5)"
@@ -1086,32 +1136,139 @@ textarea.fi{resize:none;min-height:75px}
     <button onclick="syncConCodigo()" style="width:100%;background:#8B6914;color:#fff;border:none;border-radius:10px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:Rajdhani,sans-serif">
      🔗 CONECTAR CON CÓDIGO
     </button>
-    <div style="font-size:10px;color:#888;margin-top:8px">Toca "Generar Conexión Sync" en la app PC y escribe los 4 dígitos aquí</div>
+    <div style="font-size:10px;color:#888;margin-top:8px">Toca "Generar Conexión Sync" en la app PC y escribe los 6 dígitos aquí<br><span style="color:#C9A84C;font-weight:700">· Los primeros 4 avanzan solos · Los últimos 2 se tocan independiente ·</span></div>
    </div>
-   <!-- Estado principal -->
-   <div id="sync-estado" style="background:#F4F5F7;border-radius:12px;padding:16px;text-align:center;margin-bottom:14px">
+   <div id="sync-estado" style="background:#F4F5F7;border-radius:12px;padding:16px;text-align:center;margin-bottom:10px">
     <div id="sync-icono" style="font-size:36px;margin-bottom:8px">📡</div>
     <div id="sync-titulo" style="font-size:14px;font-weight:700;color:#111;margin-bottom:4px">Buscando PC en la red...</div>
     <div id="sync-subtitulo" style="font-size:12px;color:#666;line-height:1.5"></div>
    </div>
-   <!-- Info del PC encontrado (oculto hasta encontrar) -->
-   <div id="sync-pc-info" style="display:none;background:#E6F4EC;border-radius:10px;padding:12px 14px;margin-bottom:14px">
-    <div style="font-size:11px;color:#1A6B3A;font-weight:700;margin-bottom:4px">PC ENCONTRADO</div>
+   <!-- Info PC encontrado — ahora muestra nivel -->
+   <div id="sync-pc-info" style="display:none;background:#E6F4EC;border-radius:10px;padding:12px 14px;margin-bottom:10px">
+    <div style="font-size:11px;color:#1A6B3A;font-weight:700;margin-bottom:4px">✅ PC ENCONTRADO</div>
     <div id="sync-pc-nombre" style="font-size:13px;color:#1A6B3A;font-weight:700"></div>
-    <div id="sync-pc-ip" style="font-size:11px;color:#2ecc71;font-family:monospace"></div>
-    <div id="sync-pc-ultimo" style="font-size:11px;color:#555;margin-top:4px"></div>
+    <div id="sync-pc-nivel-wrap" style="display:none;margin-top:4px">
+      <span style="font-size:10px;color:#555">Nivel en el PC: </span>
+      <span id="sync-pc-nivel" style="font-size:11px;font-weight:700;padding:1px 8px;border-radius:10px;background:#E8F0FE;color:#1F6FEB"></span>
+    </div>
+    <div id="sync-pc-ip" style="font-size:11px;color:#2ecc71;font-family:monospace;margin-top:3px"></div>
+    <div id="sync-pc-ultimo" style="font-size:11px;color:#555;margin-top:3px"></div>
+    <!-- Advertencia si nivel del PC ≠ nivel del móvil -->
+    <div id="sync-nivel-warn" style="display:none;margin-top:8px;background:#FAEEDA;border-radius:8px;padding:8px 10px;font-size:12px;color:#8B6914;line-height:1.5"></div>
    </div>
-   <!-- Error info -->
-   <div id="sync-error-info" style="display:none;background:#FDECEA;border-radius:10px;padding:12px 14px;margin-bottom:14px;font-size:12px;color:#C0392B;line-height:1.6"></div>
-   <!-- Resultado -->
-   <div id="sync-resultado" style="display:none;background:#E6F4EC;border-radius:10px;padding:12px 14px;margin-bottom:14px;font-size:13px;color:#1A6B3A;text-align:center"></div>
+   <!-- Botón Colegio Completo -->
+   <div id="sync-completo-wrap" style="display:none;margin-bottom:10px">
+    <div style="font-size:11px;color:#555;margin-bottom:6px;text-align:center">¿Quieres sincronizar todos los niveles del colegio?</div>
+    <button onclick="syncColegioCompleto()" style="width:100%;background:#1F3A5F;color:#fff;border:none;border-radius:10px;padding:11px;font-size:13px;font-weight:700;cursor:pointer;font-family:Rajdhani,sans-serif">
+     🏫 SINCRONIZAR COLEGIO COMPLETO
+    </button>
+    <div id="sync-completo-prog" style="font-size:11px;color:#888;text-align:center;margin-top:5px;display:none"></div>
+   </div>
+   <div id="sync-error-info" style="display:none;background:#FDECEA;border-radius:10px;padding:12px 14px;margin-bottom:10px;font-size:12px;color:#C0392B;line-height:1.6"></div>
+   <div id="sync-resultado" style="display:none;background:#E6F4EC;border-radius:10px;padding:12px 14px;margin-bottom:10px;font-size:13px;color:#1A6B3A;text-align:center"></div>
+   <div style="display:flex;gap:8px;padding-top:4px">
+    <button class="bg" style="flex:1" onclick="closeM('msync')">Cerrar</button>
+    <button id="sync-btn-buscar" class="bp" style="flex:1;background:#2ecc71;display:none" onclick="syncBuscarPC()">🔍 Buscar de nuevo</button>
+    <button id="sync-btn-ok" class="bp" style="flex:2;background:#2ecc71;display:none" onclick="syncConfirmar()">⬇ PC → CELULAR</button>
+    <button id="sync-btn-push" class="bp" style="flex:2;background:#1F6FEB;display:none" onclick="syncPush()">⬆ CELULAR → PC</button>
+   </div>
   </div>
-  <div class="mftr" style="gap:8px">
-   <button class="bg" style="flex:1" onclick="closeM('msync')">Cerrar</button>
-   <button id="sync-btn-buscar" class="bp" style="flex:1;background:#2ecc71;display:none" onclick="syncBuscarPC()">🔍 Buscar de nuevo</button>
-   <button id="sync-btn-ok" class="bp" style="flex:2;background:#2ecc71;display:none" onclick="syncConfirmar()">⬇ PC → CELULAR</button>
-   <button id="sync-btn-push" class="bp" style="flex:2;background:#1F6FEB;display:none" onclick="syncPush()">⬆ CELULAR → PC</button>
+
+  <!-- ══════════════════════════════════
+       PANEL DISPOSITIVO A DISPOSITIVO
+  ══════════════════════════════════ -->
+  <div id="spanel-mov" class="mbody" style="padding:18px;display:none">
+
+   <!-- ── SELECTOR ROL ── -->
+   <div id="sd2d-selector">
+    <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:12px;text-align:center;letter-spacing:.5px">¿QUÉ QUIERES HACER?</div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+     <button onclick="sd2dIniciarEnvio()"
+      style="background:#1F6FEB;color:#fff;border:none;border-radius:12px;padding:16px 14px;text-align:left;cursor:pointer;display:flex;align-items:center;gap:14px">
+      <span style="font-size:28px">📤</span>
+      <div>
+       <div style="font-size:14px;font-weight:700;font-family:Rajdhani,sans-serif">EXPORTAR desde este dispositivo</div>
+       <div style="font-size:11px;opacity:.85;margin-top:2px">Genera un código — el otro dispositivo importa tus datos</div>
+      </div>
+     </button>
+     <button onclick="sd2dMostrarRecibir()"
+      style="background:#2ecc71;color:#fff;border:none;border-radius:12px;padding:16px 14px;text-align:left;cursor:pointer;display:flex;align-items:center;gap:14px">
+      <span style="font-size:28px">📥</span>
+      <div>
+       <div style="font-size:14px;font-weight:700;font-family:Rajdhani,sans-serif">IMPORTAR en este dispositivo</div>
+       <div style="font-size:11px;opacity:.85;margin-top:2px">Ingresa el código del dispositivo que exporta</div>
+      </div>
+     </button>
+    </div>
+    <div style="font-size:10px;color:#aaa;text-align:center;margin-top:12px">
+     Funciona entre celular, tablet, PC o cualquier dispositivo con la app<br>
+     <strong style="color:#C9A84C">Requiere internet · Los datos se fusionan, no se borran</strong>
+    </div>
+   </div>
+
+   <!-- ── PANEL EXPORTAR ── -->
+   <div id="sd2d-enviar" style="display:none">
+    <button onclick="sd2dVolver()" style="background:none;border:none;color:#888;font-size:12px;cursor:pointer;margin-bottom:10px;padding:0">← Volver</button>
+    <!-- Estado -->
+    <div id="sd2d-env-estado" style="background:#F4F5F7;border-radius:12px;padding:16px;text-align:center;margin-bottom:12px">
+     <div id="sd2d-env-icono" style="font-size:36px;margin-bottom:6px">⏳</div>
+     <div id="sd2d-env-titulo" style="font-size:14px;font-weight:700;color:#111;margin-bottom:4px">Preparando datos...</div>
+     <div id="sd2d-env-sub" style="font-size:12px;color:#666"></div>
+    </div>
+    <!-- Código grande (aparece al tener código) -->
+    <div id="sd2d-env-codigo-wrap" style="display:none;background:#FDF3DC;border-radius:12px;padding:16px;text-align:center;border:1px solid #C9A84C;margin-bottom:12px">
+     <div style="font-size:11px;font-weight:700;color:#8B6914;margin-bottom:6px;letter-spacing:.5px">CÓDIGO PARA EL OTRO DISPOSITIVO</div>
+     <div id="sd2d-env-codigo" style="font-size:46px;font-weight:900;font-family:Consolas,monospace;color:#8B6914;letter-spacing:6px;line-height:1"></div>
+     <div style="font-size:10px;color:#aaa;margin-top:6px">Válido 10 min · El otro dispositivo usa "Importar"</div>
+     <button onclick="sd2dCopiarCodigo()"
+      style="margin-top:10px;background:#C9A84C;color:#fff;border:none;border-radius:8px;padding:8px 20px;font-size:12px;font-weight:700;cursor:pointer;font-family:Rajdhani,sans-serif">
+      📋 Copiar código
+     </button>
+    </div>
+    <button class="bg" style="width:100%" onclick="sd2dVolver()">← Volver al inicio</button>
+   </div>
+
+   <!-- ── PANEL IMPORTAR ── -->
+   <div id="sd2d-recibir" style="display:none">
+    <button onclick="sd2dVolver()" style="background:none;border:none;color:#888;font-size:12px;cursor:pointer;margin-bottom:10px;padding:0">← Volver</button>
+    <!-- Ingreso código -->
+    <div id="sd2d-rec-input-wrap" style="background:#FDF3DC;border-radius:12px;padding:16px;border:1px solid #C9A84C;text-align:center;margin-bottom:12px">
+     <div style="font-size:11px;font-weight:700;color:#8B6914;margin-bottom:10px;letter-spacing:.5px">INGRESA EL CÓDIGO DEL OTRO DISPOSITIVO</div>
+     <div style="display:flex;gap:6px;align-items:center;justify-content:center;margin-bottom:12px" id="sd2d-digitos">
+      <input type="tel" maxlength="1" class="sd2d-dig" oninput="sd2dDigito(this,0)" onkeydown="sd2dBack(event,this,0)"
+       style="width:42px;height:54px;text-align:center;font-size:24px;font-weight:900;font-family:Consolas,monospace;background:#fff;border:2.5px solid #C9A84C;border-radius:10px;outline:none;color:#8B6914">
+      <input type="tel" maxlength="1" class="sd2d-dig" oninput="sd2dDigito(this,1)" onkeydown="sd2dBack(event,this,1)"
+       style="width:42px;height:54px;text-align:center;font-size:24px;font-weight:900;font-family:Consolas,monospace;background:#fff;border:2.5px solid #C9A84C;border-radius:10px;outline:none;color:#8B6914">
+      <input type="tel" maxlength="1" class="sd2d-dig" oninput="sd2dDigito(this,2)" onkeydown="sd2dBack(event,this,2)"
+       style="width:42px;height:54px;text-align:center;font-size:24px;font-weight:900;font-family:Consolas,monospace;background:#fff;border:2.5px solid #C9A84C;border-radius:10px;outline:none;color:#8B6914">
+      <input type="tel" maxlength="1" class="sd2d-dig" oninput="sd2dDigito(this,3)" onkeydown="sd2dBack(event,this,3)"
+       style="width:42px;height:54px;text-align:center;font-size:24px;font-weight:900;font-family:Consolas,monospace;background:#fff;border:2.5px solid #C9A84C;border-radius:10px;outline:none;color:#8B6914">
+      <div style="width:10px;height:3px;background:#C9A84C;border-radius:2px;flex-shrink:0"></div>
+      <input type="tel" maxlength="1" class="sd2d-dig" oninput="sd2dDigito(this,4)" onkeydown="sd2dBack(event,this,4)"
+       style="width:42px;height:54px;text-align:center;font-size:24px;font-weight:900;font-family:Consolas,monospace;background:#fff;border:2.5px solid #C9A84C;border-radius:10px;outline:none;color:#8B6914">
+      <input type="tel" maxlength="1" class="sd2d-dig" oninput="sd2dDigito(this,5)" onkeydown="sd2dBack(event,this,5)"
+       style="width:42px;height:54px;text-align:center;font-size:24px;font-weight:900;font-family:Consolas,monospace;background:#fff;border:2.5px solid #C9A84C;border-radius:10px;outline:none;color:#8B6914">
+     </div>
+     <button onclick="sd2dImportar()"
+      style="width:100%;background:#2ecc71;color:#fff;border:none;border-radius:10px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:Rajdhani,sans-serif">
+      📥 IMPORTAR DATOS
+     </button>
+     <div style="font-size:10px;color:#888;margin-top:8px">Los primeros 4 dígitos avanzan solos<br><span style="color:#C9A84C;font-weight:700">· Los últimos 2 se tocan independiente ·</span></div>
+    </div>
+    <!-- Estado importación -->
+    <div id="sd2d-rec-estado" style="display:none;background:#F4F5F7;border-radius:12px;padding:16px;text-align:center;margin-bottom:12px">
+     <div id="sd2d-rec-icono" style="font-size:36px;margin-bottom:6px">⏳</div>
+     <div id="sd2d-rec-titulo" style="font-size:14px;font-weight:700;color:#111;margin-bottom:4px">Buscando datos...</div>
+     <div id="sd2d-rec-sub" style="font-size:12px;color:#666"></div>
+    </div>
+   </div>
+
+   <!-- Botón cerrar siempre visible abajo -->
+   <div style="padding-top:6px">
+    <button class="bg" style="width:100%" onclick="closeM('msync')">Cerrar</button>
+   </div>
   </div>
+
  </div>
 </div>
 
@@ -1587,9 +1744,85 @@ async function openForm(id){
   openM('mform');
 }
 
+// Resolución objetivo para almacenamiento: 200-300 KB
+// El sistema busca el px+calidad que produce ese rango
+// Para sync por ntfy se comprime adicionalmente al vuelo (ver _comprimirParaNtfy)
+const FOTO_MIN_KB = 200;
+const FOTO_MAX_KB = 300;
+const FOTO_NTFY_MAX_KB = 276; // límite ntfy menos 2 KB de datos
+
+function _comprimirImagen(imgEl, maxPx, calidad){
+  let w=imgEl.width, h=imgEl.height;
+  if(w>maxPx||h>maxPx){
+    if(w>h){h=Math.round(h*maxPx/w);w=maxPx;}
+    else{w=Math.round(w*maxPx/h);h=maxPx;}
+  }
+  const cv=document.createElement('canvas');
+  cv.width=w; cv.height=h;
+  cv.getContext('2d').drawImage(imgEl,0,0,w,h);
+  const b64=cv.toDataURL('image/jpeg',calidad);
+  const kb=Math.round(b64.length*0.75/1024);
+  return{b64,kb,w,h};
+}
+
+function _encontrarResolucionOptima(imgEl){
+  // Busca el mayor px+calidad que quede entre FOTO_MIN_KB y FOTO_MAX_KB
+  // Prioriza mayor px (mejor calidad visual) dentro del rango
+  const pxList=[1000,900,800,700,600,500,400,300,200,150,100];
+  const calList=[0.90,0.85,0.80,0.75,0.70,0.65,0.60,0.55,0.50,0.45,0.40];
+  let mejor=null;
+  for(const px of pxList){
+    for(const cal of calList){
+      const{b64,kb}=_comprimirImagen(imgEl,px,cal);
+      if(kb>=FOTO_MIN_KB && kb<=FOTO_MAX_KB){
+        if(!mejor || px>mejor.px || (px===mejor.px && cal>mejor.cal)){
+          mejor={px,cal,kb,b64};
+        }
+        break; // con este px encontramos calidad óptima, pasar al siguiente px
+      }
+    }
+    if(mejor) break; // encontramos px que cabe en el rango, usar el mayor
+  }
+  // Si no se encontró rango exacto, buscar el más cercano por debajo de MAX_KB
+  if(!mejor){
+    for(const px of pxList){
+      for(const cal of calList){
+        const{b64,kb}=_comprimirImagen(imgEl,px,cal);
+        if(kb<=FOTO_MAX_KB){
+          mejor={px,cal,kb,b64};
+          break;
+        }
+      }
+      if(mejor) break;
+    }
+  }
+  return mejor||{b64:_comprimirImagen(imgEl,200,0.60).b64,kb:0,px:200,cal:0.60};
+}
+
+// Comprime foto al máximo que aguanta ntfy (para sync)
+function _comprimirParaNtfy(b64original){
+  return new Promise(resolve=>{
+    if(!b64original){resolve('');return;}
+    const img=new Image();
+    img.onerror=()=>resolve('');
+    img.onload=()=>{
+      const pxList=[240,200,180,160,140,120,100,80,60];
+      const calList=[0.85,0.80,0.75,0.70,0.65,0.60,0.55,0.50,0.45,0.40];
+      for(const px of pxList){
+        for(const cal of calList){
+          const{b64,kb}=_comprimirImagen(img,px,cal);
+          if(kb<=FOTO_NTFY_MAX_KB) return resolve(b64);
+        }
+      }
+      resolve(_comprimirImagen(img,60,0.40).b64);
+    };
+    img.src=b64original;
+  });
+}
+
 function onFoto(e){
   const f=e.target.files[0];
-  e.target.value=''; // limpiar para poder seleccionar la misma foto otra vez
+  e.target.value='';
   if(!f)return;
   if(!f.type.startsWith('image/')){toast('⚠ Selecciona un archivo de imagen','e');return;}
   toast('⏳ Procesando imagen…','i');
@@ -1600,20 +1833,12 @@ function onFoto(e){
     img.onerror=()=>toast('⚠ No se pudo procesar la imagen','e');
     img.onload=()=>{
       try{
-        const MAX=800; // 800px — calidad para impresión sin pixelado
-        let w=img.width,h=img.height;
-        if(w>MAX||h>MAX){
-          if(w>h){h=Math.round(h*MAX/w);w=MAX;}
-          else{w=Math.round(w*MAX/h);h=MAX;}
-        }
-        const cv=document.createElement('canvas');
-        cv.width=w;cv.height=h;
-        cv.getContext('2d').drawImage(img,0,0,w,h);
-        fotoB64=cv.toDataURL('image/jpeg',0.85);
-        fotoExistente=fotoB64;
+        const opt=_encontrarResolucionOptima(img);
+        fotoB64=opt.b64;
+        fotoExistente=opt.b64;
         const prev=document.getElementById('fprev');
-        if(prev) prev.innerHTML=`<img src="${fotoB64}" style="width:100%;height:100%;object-fit:cover;border-radius:7px">`;
-        toast('✓ Foto cargada','s');
+        if(prev) prev.innerHTML=`<img src="${opt.b64}" style="width:100%;height:100%;object-fit:cover;border-radius:7px">`;
+        toast(`✓ Foto lista · ${opt.kb} KB · ${opt.px}px`,'s');
       }catch(err){ toast('⚠ Error: '+err.message,'e'); }
     };
     img.src=ev.target.result;
@@ -2331,10 +2556,17 @@ async function respaldarSQLite(){
     const total=alumnos.filter(a=>!a.deleted).length;
     const d=JSON.stringify({version:1,ts:new Date().toISOString(),alumnos,config:cfg});
     const blob=new Blob([d],{type:'application/json'});
-    const nombreArchivo=`cnm_alumnos_${fecha}.json`;
-    const texto=`📦 BD CNM Software · ${total} alumnos · ${fecha} ${hora}`;
 
-    // 1. Intentar Web Share API con archivo (funciona en Kiwi/Chrome Android con HTTPS)
+    // Nombre descriptivo: colegio + nivel + fecha
+    const grupo = (_usuarioActual?.colegio_grupo||_usuarioActual?.nombre_colegio||'cnm')
+      .replace(/\s+/g,'_').toLowerCase().replace(/[^a-z0-9_]/g,'');
+    const nivel = (_usuarioActual?.nivel||'')
+      .replace(/\s+/g,'_').toLowerCase().replace(/[^a-z0-9_]/g,'');
+    const sufijo = nivel ? `${grupo}_${nivel}` : grupo;
+    const nombreArchivo=`cnm_${sufijo}_${fecha}.json`;
+    const texto=`📦 BD CNM Software · ${total} alumnos · ${fecha} ${hora}\nColegio: ${_usuarioActual?.colegio_grupo||''} · Nivel: ${_usuarioActual?.nivel||'—'}`;
+
+    // 1. Intentar Web Share API con archivo
     try{
       const f=new File([blob],nombreArchivo,{type:'application/json'});
       if(navigator.share&&navigator.canShare&&navigator.canShare({files:[f]})){
@@ -2349,7 +2581,9 @@ async function respaldarSQLite(){
     _exportNombre=nombreArchivo;
     _exportTotal=total;
     _exportFecha=`${fecha} ${hora}`;
-    document.getElementById('mexportar-info').innerHTML=`<strong>${total} alumnos</strong> listos<br><span style='font-size:11px;opacity:.8'>${nombreArchivo}</span>`;
+    document.getElementById('mexportar-info').innerHTML=
+      `<strong>${total} alumnos</strong> listos<br>`+
+      `<span style='font-size:11px;opacity:.8'>${nombreArchivo}</span>`;
     openM('mexportar');
     toast(`✓ BD lista — ${total} alumnos`,'s');
   }catch(err){
@@ -2409,10 +2643,100 @@ async function exportarPorApp(tipo){
   }
 }
 async function importar(){
-  const ok=await confirm2('📥 Importar base de datos','Selecciona un archivo .db para importar.\nLos datos se fusionarán con los actuales sin borrar nada.\n\nTambién acepta .json (respaldo de emergencia).\n¿Continuar?','Importar');
+  // Si hay múltiples niveles en el grupo, preguntar a cuál nivel importar
+  const grupo = _usuarioActual?._grupoUsuarios||[];
+  const nivelOrd={'PRE BASICA':1,'BASICA':2,'MEDIA':3};
+  const nivDisp = grupo.filter(u=>u.nivel).sort((a,b)=>(nivelOrd[a.nivel]||9)-(nivelOrd[b.nivel]||9));
+
+  if(nivDisp.length > 1){
+    // Construir opciones de niveles
+    const colNivel={'PRE BASICA':'#E8F0FE|#1F6FEB','BASICA':'#E6F4EC|#1A6B3A','MEDIA':'#FAEEDA|#8B6914'};
+    const nivelActualLabel = _usuarioActual?.nivel || 'activo';
+
+    const opcs = nivDisp.map((u,i)=>{
+      const [bg,col]=(colNivel[u.nivel]||'#F1EFE8|#5F5E5A').split('|');
+      const esActivo = u.id===_usuarioActual?.id;
+      return `<button onclick="window._importNivelElegido=${i};document.getElementById('import-nivel-modal').remove()"
+        style="display:block;width:100%;text-align:left;padding:10px 14px;margin-bottom:6px;
+               background:${esActivo?bg:'var(--color-background-secondary)'};
+               color:${esActivo?col:'var(--color-text-primary)'};
+               border:1.5px solid ${esActivo?col:'var(--color-border-tertiary)'};
+               border-radius:8px;cursor:pointer;font-family:Nunito,sans-serif;font-size:13px;font-weight:700">
+        ${u.nivel}${esActivo?' ✓ (actual)':''}
+      </button>`;
+    });
+
+    const cancelHtml=`<button onclick="window._importNivelElegido=-1;document.getElementById('import-nivel-modal').remove()"
+      style="width:100%;padding:9px;background:none;border:0.5px solid var(--color-border-secondary);
+             border-radius:8px;cursor:pointer;font-size:13px;color:var(--color-text-secondary);
+             font-family:Nunito,sans-serif">Cancelar</button>`;
+
+    // Modal simple de selección
+    const overlay=document.createElement('div');
+    overlay.id='import-nivel-modal';
+    overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px';
+    overlay.innerHTML=`
+      <div style="background:var(--color-background-primary);border-radius:14px;padding:20px;width:100%;max-width:320px">
+        <div style="font-size:14px;font-weight:700;color:var(--color-text-primary);margin-bottom:4px">¿A qué nivel importar?</div>
+        <div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:14px">Los datos se fusionarán sin borrar nada</div>
+        ${opcs.join('')}
+        ${cancelHtml}
+      </div>`;
+    window._importNivelElegido=null;
+    document.body.appendChild(overlay);
+    // Esperar selección
+    await new Promise(res=>{
+      const chk=setInterval(()=>{
+        if(window._importNivelElegido!==null){ clearInterval(chk); res(); }
+      },100);
+    });
+    const idx=window._importNivelElegido;
+    window._importNivelElegido=null;
+    if(idx===-1) return; // cancelado
+
+    const usrDestino=nivDisp[idx];
+    // Si es diferente al activo, cambiar BD temporalmente para importar
+    if(usrDestino.id!==_usuarioActual?.id){
+      const dbNomDestino=`${DBN_PREFIX}${usrDestino.id}`;
+      const ok=await confirm2(
+        '📥 Importar en '+usrDestino.nivel,
+        `Los datos se importarán en la base de ${usrDestino.nivel}.\nSelecciona el archivo .db o .json.`,
+        'Seleccionar archivo');
+      if(!ok) return;
+      // Abrir BD del nivel destino, importar, y restaurar BD activa
+      const dbPrev=db;
+      db=await new Promise(res=>{
+        const r=indexedDB.open(dbNomDestino,4);
+        r.onsuccess=e=>res(e.target.result);
+        r.onerror=()=>res(null);
+        r.onupgradeneeded=e=>{
+          const d=e.target.result;
+          if(!d.objectStoreNames.contains('alumnos')){
+            const s=d.createObjectStore('alumnos',{keyPath:'id',autoIncrement:true});
+            s.createIndex('uuid','uuid',{unique:true});
+            s.createIndex('updated_at','updated_at');
+          }
+          if(!d.objectStoreNames.contains('cfg'))
+            d.createObjectStore('cfg',{keyPath:'k'});
+        };
+      });
+      if(!db){ toast('⚠ No se pudo abrir la base del nivel seleccionado','e'); db=dbPrev; return; }
+      const inp=document.getElementById('importInput');
+      inp.value=''; inp.click();
+      // Restaurar BD activa después de importar (onImportFile lo hará)
+      window._importDbRestore=dbPrev;
+      return;
+    }
+  }
+
+  const ok=await confirm2(
+    '📥 Importar base de datos',
+    `Los datos se fusionarán con ${_usuarioActual?.nivel||'la base actual'} sin borrar nada.\n\nAcepta archivos .json (respaldo CNM) y .db (SQLite PC).`,
+    'Seleccionar archivo');
   if(!ok)return;
-  // Usar input fijo en el DOM — funciona en Android WebView
   const inp=document.getElementById('importInput');
+  inp.value=''; inp.click();
+}
   inp.value=''; // limpiar selección anterior
   inp.click();
 }
@@ -2424,6 +2748,12 @@ async function onImportFile(e){
     await importarSQLite(f);
   }else{
     await importarJSON(f);
+  }
+  // Si importamos en un nivel diferente al activo, restaurar BD original
+  if(window._importDbRestore!==undefined){
+    db=window._importDbRestore;
+    window._importDbRestore=undefined;
+    await buscar(); await refreshUI();
   }
 }
 
@@ -2758,27 +3088,47 @@ async function cargarListaUsuarios(containerId){
     el.innerHTML=`<div style="text-align:center;color:#aaa;padding:20px">No hay usuarios registrados</div>`;
     return;
   }
-  el.innerHTML=lista.map(u=>`
-    <div style="background:#F4F5F7;border-radius:10px;padding:12px 14px;border:1px solid ${u.esAdmin?'#C9A84C':'#DDE0E4'}">
+  // Ordenar: admin, luego grupo, luego nivel
+  const nivelOrd={'PRE BASICA':1,'BASICA':2,'MEDIA':3};
+  lista.sort((a,b)=>{
+    if(a.esAdmin&&!b.esAdmin) return -1;
+    if(!a.esAdmin&&b.esAdmin) return 1;
+    const ga=a.colegio_grupo||a.nombre_colegio||'';
+    const gb=b.colegio_grupo||b.nombre_colegio||'';
+    return ga.localeCompare(gb)||(nivelOrd[a.nivel]||9)-(nivelOrd[b.nivel]||9);
+  });
+  const colNivel={'PRE BASICA':'#E8F0FE|#1F6FEB','BASICA':'#E6F4EC|#1A6B3A','MEDIA':'#FDF3DC|#8B6914'};
+  el.innerHTML=lista.map(u=>{
+    const [nbg,ncol]=(colNivel[u.nivel]||'#F1EFE8|#5F5E5A').split('|');
+    const bg=u.esAdmin?'#FDF3DC':nbg;
+    const col=u.esAdmin?'#8B6914':ncol;
+    const etiqueta=u.esAdmin?'ADMINISTRADOR':u.nivel?u.nivel:'USUARIO';
+    return `
+    <div style="background:#F4F5F7;border-radius:10px;padding:12px 14px;border:1.5px solid ${u.esAdmin?'#C9A84C':'#DDE0E4'}">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
-        <div style="width:36px;height:36px;border-radius:50%;background:${u.esAdmin?'#FDF3DC':'#E8F0FE'};display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">${u.esAdmin?'👑':'🏫'}</div>
+        <div style="width:36px;height:36px;border-radius:50%;background:${bg};display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:${col};flex-shrink:0">
+          ${(u.nivel||u.nombre_colegio||u.usuario).split(' ').slice(0,2).map(w=>w[0]||'').join('').toUpperCase()||'?'}
+        </div>
         <div style="flex:1;min-width:0">
           <div style="font-size:13px;font-weight:800;color:#111;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(u.usuario)}</div>
-          <div style="font-size:11px;color:#666;margin-top:1px">${esc(u.nombre_colegio||'Sin nombre')}</div>
-          <div style="font-size:10px;color:${u.esAdmin?'#8B6914':'#1F6FEB'};font-weight:700;font-family:'Rajdhani',sans-serif;margin-top:2px">${u.esAdmin?'ADMINISTRADOR':'USUARIO COLEGIO'}</div>
+          ${u.colegio_grupo&&u.colegio_grupo!==u.usuario?`<div style="font-size:11px;color:#888;margin-top:1px">🏫 ${esc(u.colegio_grupo)}</div>`:''}
+          <div style="font-size:10px;color:${col};font-weight:700;margin-top:2px;font-family:'Rajdhani',sans-serif">${etiqueta}${u._ejemplo?' · demo':''}</div>
         </div>
       </div>
       <div style="display:flex;gap:6px">
         <button onclick="editarUsuario(${u.id})" style="flex:1;background:#E8F0FE;color:#1F6FEB;border:1px solid #1F6FEB;border-radius:7px;padding:7px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Rajdhani',sans-serif">✎ Editar</button>
         ${u.usuario!=='admin'?`<button onclick="eliminarUsuarioConfirm(${u.id},'${esc(u.usuario)}')" style="background:#FDECEA;color:#C0392B;border:1px solid #C0392B;border-radius:7px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Rajdhani',sans-serif">✕</button>`:''}
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 function abrirFormNuevoUsuario(){
   document.getElementById('fusr-id').value='';
   document.getElementById('fusr-title').textContent='👤 NUEVO USUARIO / COLEGIO';
   document.getElementById('fusr-colegio').value='';
+  document.getElementById('fusr-grupo').value='';
+  document.getElementById('fusr-nivel').value='';
   document.getElementById('fusr-usuario').value='';
   document.getElementById('fusr-password').value='';
   document.getElementById('fusr-password2').value='';
@@ -2794,6 +3144,8 @@ async function editarUsuario(id){
   document.getElementById('fusr-id').value=u.id;
   document.getElementById('fusr-title').textContent='✎ EDITAR USUARIO';
   document.getElementById('fusr-colegio').value=u.nombre_colegio||'';
+  document.getElementById('fusr-grupo').value=u.colegio_grupo||u.nombre_colegio||'';
+  document.getElementById('fusr-nivel').value=u.nivel||'';
   document.getElementById('fusr-usuario').value=u.usuario;
   document.getElementById('fusr-password').value='';
   document.getElementById('fusr-password2').value='';
@@ -2803,11 +3155,19 @@ async function editarUsuario(id){
   openM('mformusr');
 }
 
+function syncGrupoDesdeNombre(){
+  const col = document.getElementById('fusr-colegio').value.trim();
+  const grp = document.getElementById('fusr-grupo');
+  if(!grp.value.trim()) grp.value = col;
+}
+
 async function guardarUsuario(){
   const idRaw=document.getElementById('fusr-id').value;
   const id=idRaw?parseInt(idRaw):null;
-  const colegio=document.getElementById('fusr-colegio').value.trim();
-  const usuario=document.getElementById('fusr-usuario').value.trim().toLowerCase().replace(/\s+/g,'_');
+  const colegio = document.getElementById('fusr-colegio').value.trim().toUpperCase().replace(/_/g,' ');
+  const grupo   = document.getElementById('fusr-grupo').value.trim().toUpperCase().replace(/_/g,' ') || colegio;
+  const nivel   = document.getElementById('fusr-nivel').value.trim().toUpperCase().replace(/_/g,' ');
+  const usuario = document.getElementById('fusr-usuario').value.trim().toUpperCase().replace(/_/g,' ');
   const pwd=document.getElementById('fusr-password').value;
   const pwd2=document.getElementById('fusr-password2').value;
   const esAdmin=document.getElementById('fusr-esadmin').checked;
@@ -2824,7 +3184,7 @@ async function guardarUsuario(){
     if(pwd!==pwd2){ERR('⚠ Las contraseñas no coinciden');return}
     const existe=await getUsuarioPorNombre(usuario);
     if(existe){ERR(`⚠ El usuario "${usuario}" ya existe`);return}
-    await crearUsuario({usuario,password:pwd,nombre_colegio:colegio,esAdmin});
+    await crearUsuario({usuario,password:pwd,nombre_colegio:colegio,colegio_grupo:grupo,nivel,esAdmin});
     OK(`✓ Usuario "${usuario}" creado correctamente`);
     toast(`✓ Usuario "${usuario}" creado`,'s');
   } else {
@@ -2837,7 +3197,7 @@ async function guardarUsuario(){
       const existe=await getUsuarioPorNombre(usuario);
       if(existe){ERR(`⚠ El usuario "${usuario}" ya existe`);return}
     }
-    u.nombre_colegio=colegio; u.usuario=usuario;
+    u.nombre_colegio=colegio; u.colegio_grupo=grupo; u.nivel=nivel; u.usuario=usuario;
     if(pwd) u.password=pwd;
     u.esAdmin=esAdmin;
     await actualizarUsuario(u);
@@ -3079,7 +3439,9 @@ async function borrarTodosPdfs(){
 async function refreshUI(){
   const c=await acfg();
   const nomColegio=c.nombre_colegio||(_usuarioActual&&_usuarioActual.nombre_colegio)||'CNM Software';
-  document.getElementById('tschool').textContent=nomColegio;
+  // En topbar mostrar nombre del grupo (sin el nivel)
+  const nomTopbar = (_usuarioActual&&_usuarioActual.colegio_grupo) || nomColegio;
+  document.getElementById('tschool').textContent=nomTopbar;
   document.getElementById('sbinst').textContent=`${nomColegio}  ·  ${c.direccion||''}`;
   if(c.logo){
     document.getElementById('logo-circle').innerHTML=`<img src="${c.logo}" alt="logo">`;
@@ -3098,6 +3460,71 @@ async function refreshUI(){
   if(btnGU) btnGU.style.display=(_usuarioActual&&_usuarioActual.esAdmin)?'flex':'none';
   await restaurarAutoguardado();
   await buscar();
+}
+
+// ── Selector de nivel en topbar ──────────────────────
+const _colNivelTop={'PRE BASICA':'#E8F0FE|#1F6FEB|#85B7EB','BASICA':'#E6F4EC|#1A6B3A|#97C459','MEDIA':'#FAEEDA|#8B6914|#EF9F27'};
+
+function _actualizarSelectorNivel(){
+  const wrap = document.getElementById('nivel-selector');
+  if(!wrap) return;
+  const grupo = _usuarioActual?._grupoUsuarios;
+  // Solo mostrar si hay más de 1 nivel en el grupo
+  if(!grupo || grupo.length <= 1 || (_usuarioActual&&_usuarioActual.esAdmin)){
+    wrap.style.display='none';
+    return;
+  }
+  const nivelOrd={'PRE BASICA':1,'BASICA':2,'MEDIA':3};
+  const ordenados=[...grupo].sort((a,b)=>(nivelOrd[a.nivel]||9)-(nivelOrd[b.nivel]||9));
+  wrap.innerHTML='';
+  wrap.style.display='flex';
+  ordenados.forEach(u=>{
+    const activo = _usuarioActual && _usuarioActual.id===u.id;
+    const [bg,col,bdr]=(_colNivelTop[u.nivel]||'#F1EFE8|#5F5E5A|#B4B2A9').split('|');
+    const btn=document.createElement('button');
+    btn.textContent = u.nivel||u.usuario;
+    btn.style.cssText=[
+      `background:${activo?bg:'transparent'}`,
+      `color:${activo?col:'#888'}`,
+      `border:1.5px solid ${activo?bdr:'#DDE0E4'}`,
+      'border-radius:20px;padding:1px 9px;font-size:10px;font-weight:700',
+      'cursor:pointer;white-space:nowrap;font-family:Rajdhani,sans-serif',
+      `opacity:${activo?1:0.7}`,
+      'transition:all .15s'
+    ].join(';');
+    if(!activo){
+      btn.addEventListener('mouseenter',()=>{btn.style.opacity='1';btn.style.borderColor=bdr;btn.style.color=col;});
+      btn.addEventListener('mouseleave',()=>{btn.style.opacity='0.7';btn.style.borderColor='#DDE0E4';btn.style.color='#888';});
+      btn.addEventListener('click',()=>cambiarNivel(u));
+    }
+    wrap.appendChild(btn);
+  });
+}
+
+async function cambiarNivel(usr){
+  if(!usr) return;
+  try{
+    // Cambiar base de datos sin cerrar sesión
+    const dbUsr = await getUsuarioPorNombre(usr.usuario);
+    if(!dbUsr) return;
+    _usuarioActual.id           = dbUsr.id;
+    _usuarioActual.usuario      = dbUsr.usuario;
+    _usuarioActual.nombre_colegio = dbUsr.nombre_colegio||'';
+    _usuarioActual.nivel        = dbUsr.nivel||'';
+    _usuarioActual.dbName       = `${DBN_PREFIX}${dbUsr.id}`;
+    db=null;
+    await openDB(_usuarioActual.dbName);
+    if(_usuarioActual.nombre_colegio){
+      const cfgNom=await gcfg('nombre_colegio');
+      if(!cfgNom||cfgNom===DCFG.nombre_colegio) await scfg('nombre_colegio',_usuarioActual.nombre_colegio);
+    }
+    await refreshUI();
+    _actualizarSelectorNivel();
+    toast(`✓ Cambiado a ${dbUsr.nivel||dbUsr.usuario}`,'s');
+  }catch(e){
+    toast('⚠ Error al cambiar nivel','e');
+    console.error('cambiarNivel:',e);
+  }
 }
 
 // ─── MODALS ───────────────────────────────────────
@@ -3149,6 +3576,147 @@ function toast(msg,type='i'){
 }
 
 // ─── LOGIN MULTIUSUARIO ───────────────────────────
+// ══════════════════════════════════════════════
+// COLEGIO DE EJEMPLO — se crea solo la primera vez
+// ══════════════════════════════════════════════
+async function _crearColegioEjemplo(){
+  try{
+    const todos = await iallA('usuarios');
+    // Solo crear si no existe ninguno con colegio_grupo = 'COLEGIO MAIPU'
+    const yaExiste = todos.some(u=>u.colegio_grupo==='COLEGIO MAIPU');
+    if(yaExiste) return;
+
+    const niveles = [
+      {nombre:'COLEGIO MAIPU PRE BASICA', nivel:'PRE BASICA', pwd:'1234'},
+      {nombre:'COLEGIO MAIPU BASICA',     nivel:'BASICA',     pwd:'1234'},
+      {nombre:'COLEGIO MAIPU MEDIA',      nivel:'MEDIA',      pwd:'1234'},
+    ];
+    for(const n of niveles){
+      await iputA('usuarios',{
+        usuario:       n.nombre,
+        password:      n.pwd,
+        nombre_colegio:n.nombre,
+        colegio_grupo: 'COLEGIO MAIPU',
+        nivel:         n.nivel,
+        esAdmin:       false,
+        creado:        new Date().toISOString(),
+        _ejemplo:      true   // marca para saber que es demo
+      });
+    }
+    console.log('✓ Colegio de ejemplo COLEGIO MAIPU creado (3 bases)');
+  }catch(e){
+    console.warn('_crearColegioEjemplo:',e);
+  }
+}
+
+// ══════════════════════════════════════════════
+// LOGIN VISUAL — 1 tarjeta por colegio, niveles como chips
+// ══════════════════════════════════════════════
+let _loginGrupoActual = null; // usuarios del grupo seleccionado
+
+async function loginCargarUsuarios(){
+  try{
+    if(!dbAdmin) await openAdminDB();
+    await asegurarAdminMaestro();
+    await _crearColegioEjemplo();
+
+    const todos = await iallA('usuarios');
+    const lista = document.getElementById('login-usuarios-lista');
+    lista.innerHTML = '';
+
+    if(!todos.length){
+      lista.innerHTML=`<div style="text-align:center;color:#aaa;font-size:13px;padding:12px">Sin usuarios registrados.<br>Toca <strong>Restablecer acceso</strong>.</div>`;
+      return;
+    }
+
+    // Agrupar por colegio_grupo — 1 tarjeta por grupo
+    const grupos = {};
+    todos.forEach(u=>{
+      const g = u.colegio_grupo || u.nombre_colegio || u.usuario;
+      if(!grupos[g]) grupos[g] = [];
+      grupos[g].push(u);
+    });
+
+    const nivelOrd = {'PRE BASICA':1,'BASICA':2,'MEDIA':3};
+    const colNivel = {'PRE BASICA':'#E8F0FE|#1F6FEB','BASICA':'#E6F4EC|#1A6B3A','MEDIA':'#FAEEDA|#8B6914'};
+
+    const claves = Object.keys(grupos).sort((a,b)=>{
+      const aA=grupos[a].some(u=>u.esAdmin), bA=grupos[b].some(u=>u.esAdmin);
+      return (bA-aA)||a.localeCompare(b);
+    });
+
+    claves.forEach(grupo=>{
+      const usuarios = grupos[grupo];
+      usuarios.sort((a,b)=>(nivelOrd[a.nivel]||9)-(nivelOrd[b.nivel]||9));
+
+      const esAdmin   = usuarios.some(u=>u.esAdmin);
+      const esEjemplo = usuarios.some(u=>u._ejemplo);
+      const niveles   = usuarios.map(u=>u.nivel).filter(Boolean);
+
+      const iniciales = grupo.split(' ').filter(Boolean).slice(0,2).map(w=>w[0]).join('').toUpperCase()||'?';
+      const bg    = esAdmin?'#FDF3DC':'#E8F0FE';
+      const color = esAdmin?'#8B6914':'#1F6FEB';
+
+      const chipsHtml = niveles.length
+        ? niveles.map(n=>{
+            const [nb,nc]=(colNivel[n]||'#F1EFE8|#5F5E5A').split('|');
+            return `<span style="font-size:10px;padding:1px 7px;border-radius:10px;background:${nb};color:${nc};font-weight:600">${n}</span>`;
+          }).join(' ')
+        : `<span style="font-size:10px;color:#aaa">${esAdmin?'ADMINISTRADOR':'SIN NIVEL'}</span>`;
+
+      const card = document.createElement('button');
+      card.style.cssText=[
+        'display:flex;align-items:center;gap:12px;width:100%;text-align:left',
+        'background:#fff;border:1.5px solid #E8EAED;border-radius:10px',
+        'padding:10px 12px;cursor:pointer;transition:border-color .15s,background .15s',
+        'font-family:Nunito,sans-serif'
+      ].join(';');
+
+      card.innerHTML=`
+        <div style="width:40px;height:40px;border-radius:50%;background:${bg};flex-shrink:0;
+             display:flex;align-items:center;justify-content:center;
+             font-size:14px;font-weight:700;color:${color}">${iniciales}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;font-weight:700;color:#111;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+            ${grupo}${esEjemplo?' <span style="font-size:10px;background:#E8EAED;color:#888;border-radius:4px;padding:1px 5px;font-weight:400">demo</span>':''}
+          </div>
+          <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:3px">${chipsHtml}</div>
+          ${esEjemplo?'<div style="font-size:10px;color:#aaa;margin-top:2px">clave: 1234</div>':''}
+        </div>
+        <div style="color:#C8CCD0;font-size:18px">›</div>`;
+
+      card.addEventListener('mouseenter',()=>{card.style.borderColor=color;card.style.background='#FAFAFA';});
+      card.addEventListener('mouseleave',()=>{card.style.borderColor='#E8EAED';card.style.background='#fff';});
+      card.addEventListener('click',()=>loginSeleccionarGrupo(grupo, usuarios));
+      lista.appendChild(card);
+    });
+  }catch(e){ console.error('loginCargarUsuarios:',e); }
+}
+
+// Paso 2: el usuario tocó un colegio → pedir solo la clave
+function loginSeleccionarGrupo(grupo, usuarios){
+  _loginGrupoActual = usuarios;
+  // Poner el primer usuario como referencia para validar la clave
+  document.getElementById('lu').value = usuarios[0].usuario;
+  document.getElementById('login-user-nombre').textContent = grupo;
+  document.getElementById('login-user-icon').textContent   = usuarios.some(u=>u.esAdmin)?'👑':'🏫';
+  document.getElementById('login-usuarios-lista').style.display = 'none';
+  document.getElementById('login-pass-wrap').style.display       = '';
+  document.getElementById('login-btn').style.display             = '';
+  const lp=document.getElementById('lp');
+  lp.value='';
+  setTimeout(()=>lp.focus(),80);
+}
+
+function loginCambiarUsuario(){
+  _loginGrupoActual = null;
+  document.getElementById('lu').value                           = '';
+  document.getElementById('login-pass-wrap').style.display      = 'none';
+  document.getElementById('login-btn').style.display            = 'none';
+  document.getElementById('login-usuarios-lista').style.display = '';
+  document.getElementById('lmsg').textContent                   = '';
+}
+
 async function login(){
   const u=document.getElementById('lu').value.trim();
   const p=document.getElementById('lp').value.trim();
@@ -3170,27 +3738,51 @@ async function login(){
     await asegurarAdminMaestro();
     await new Promise(r=>setTimeout(r,500));
     msg.textContent='⏳ Verificando…';
-    const usr=await getUsuarioPorNombre(u);
-    if(!usr){
-      const todos=await iallA('usuarios');
-      msg.style.color='#ff6b6b';
-      msg.textContent=todos.length===0?'⚠ BD vacía — toca Restablecer acceso':`⚠ Usuario "${u}" no encontrado`;
-      document.getElementById('lp').value='';
-      return;
+
+    // Validar clave — si hay grupo, basta que UNO del grupo tenga esa clave
+    let usr = null;
+    if(_loginGrupoActual && _loginGrupoActual.length){
+      // Buscar el primer usuario del grupo cuya clave coincida
+      for(const candidate of _loginGrupoActual){
+        const dbUsr = await getUsuarioPorNombre(candidate.usuario);
+        if(dbUsr && dbUsr.password === p){ usr = dbUsr; break; }
+      }
+      if(!usr){
+        // Todos los del grupo tienen clave incorrecta
+        msg.style.color='#ff6b6b';
+        msg.textContent='⚠ Contraseña incorrecta';
+        document.getElementById('lp').value='';
+        document.getElementById('lp').focus();
+        return;
+      }
+    } else {
+      // Flujo normal (admin u/sin grupo)
+      usr = await getUsuarioPorNombre(u);
+      if(!usr){
+        const todos=await iallA('usuarios');
+        msg.style.color='#ff6b6b';
+        msg.textContent=todos.length===0?'⚠ BD vacía — toca Restablecer acceso':`⚠ Usuario "${u}" no encontrado`;
+        document.getElementById('lp').value='';
+        return;
+      }
+      if(usr.password!==p){
+        msg.style.color='#ff6b6b';
+        msg.textContent='⚠ Contraseña incorrecta';
+        document.getElementById('lp').value='';
+        document.getElementById('lp').focus();
+        return;
+      }
     }
-    if(usr.password!==p){
-      msg.style.color='#ff6b6b';
-      msg.textContent='⚠ Contraseña incorrecta';
-      document.getElementById('lp').value='';
-      document.getElementById('lp').focus();
-      return;
-    }
+
     _usuarioActual={
       id:usr.id, usuario:usr.usuario,
       nombre_colegio:usr.nombre_colegio||'',
+      colegio_grupo: usr.colegio_grupo||'',
+      nivel:         usr.nivel||'',
       esAdmin:!!usr.esAdmin,
       dbName:usr.esAdmin?'cnm_v4_admin':`${DBN_PREFIX}${usr.id}`,
-      _pwd:usr.password||'0000'
+      _pwd:usr.password||'0000',
+      _grupoUsuarios: _loginGrupoActual||null
     };
     db=null;
     await openDB(_usuarioActual.dbName);
@@ -3202,11 +3794,13 @@ async function login(){
     msg.textContent='';
     document.getElementById('login-panel').style.display='none';
     await refreshUI();
+    // Mostrar selector de nivel si el grupo tiene más de un nivel
+    _actualizarSelectorNivel();
     const btnGU=document.getElementById('btn-gest-usuarios');
     if(btnGU) btnGU.style.display=_usuarioActual.esAdmin?'flex':'none';
     const tabBtn=document.getElementById('tab-usuarios-btn');
     if(tabBtn) tabBtn.style.display=_usuarioActual.esAdmin?'flex':'none';
-    toast(`✓ Bienvenido ${usr.esAdmin?'[ADMIN] ':''}${u}`,'s');
+    toast(`✓ Bienvenido — ${_usuarioActual.colegio_grupo||_usuarioActual.usuario}${_usuarioActual.nivel?' · '+_usuarioActual.nivel:''}`,'s');
   }catch(err){
     msg.style.color='#ff6b6b';
     msg.textContent='⚠ '+err.message;
@@ -3229,10 +3823,9 @@ async function resetCredenciales(){
         esAdmin:true,creado:new Date().toISOString()
       });
     }
-    document.getElementById('lu').value='admin';
-    document.getElementById('lp').value='0000';
-    msg.style.color='#4ade80';
-    msg.textContent='✓ Listo — usuario: admin · clave: 0000';
+    document.getElementById('lmsg').style.color='#4ade80';
+    document.getElementById('lmsg').textContent='✓ Listo — usuario: admin · clave: 0000';
+    await loginCargarUsuarios();
   }catch(e){
     msg.style.color='#ff6b6b';
     msg.textContent='⚠ Error: '+e.message;
@@ -3252,13 +3845,17 @@ async function cerrarSesion(){
   if(_usuarioActual&&_agPendiente) await autoguardarSilencioso();
   _usuarioActual=null;
   db=null;
-  document.getElementById('login-panel').style.display='flex';
+  // Resetear login visual
   document.getElementById('lu').value='';
   document.getElementById('lp').value='';
   document.getElementById('lmsg').textContent='';
   document.getElementById('lmsg').style.color='';
-  document.getElementById('lp').focus();
+  document.getElementById('login-pass-wrap').style.display='none';
+  document.getElementById('login-btn').style.display='none';
+  document.getElementById('login-usuarios-lista').style.display='';
+  document.getElementById('login-panel').style.display='flex';
   closeSB();
+  loginCargarUsuarios();
   toast('✓ Sesión cerrada','s');
 }
 
@@ -3287,7 +3884,7 @@ async function autoguardarSilencioso(){
     const hora=new Date().toLocaleTimeString('es-CL',{hour:'2-digit',minute:'2-digit'});
     const fecha=new Date().toLocaleDateString('es-CL',{day:'2-digit',month:'2-digit',year:'numeric'});
     document.getElementById('sb-txt').textContent='💾 '+fecha+' '+hora;
-    setTimeout(()=>{ document.getElementById('sb-txt').textContent='CNM v58'; _agSetDot('idle'); },8000);
+    setTimeout(()=>{ document.getElementById('sb-txt').textContent='CNM v60'; _agSetDot('idle'); },8000);
   }catch(e){
     _agSetDot('error');
     console.warn('Autoguardado falló:',e);
@@ -3343,13 +3940,8 @@ async function init(){
   window.addEventListener('orientationchange', ()=>setTimeout(_hideBar, 300));
   await openAdminDB();
   await asegurarAdminMaestro();
-  // Siempre pre-llenar usuario con "admin" la primera vez
-  document.getElementById('lu').value='admin';
-  const msg=document.getElementById('lmsg');
-  if(_esPrimeraVez()){
-    if(msg){msg.style.color='#C9A84C';msg.textContent='Primera vez: usuario admin · clave 0000';}
-  }
-  document.getElementById('lp').focus();
+  // Cargar lista visual de usuarios en el login
+  await loginCargarUsuarios();
   setInterval(()=>{ if(_usuarioActual&&_agPendiente)autoguardarSilencioso(); },5*60*1000);
   window.addEventListener('beforeunload',()=>{ if(_usuarioActual&&_agPendiente)autoguardarSilencioso(); });
   document.addEventListener('visibilitychange',()=>{ if(document.hidden&&_usuarioActual&&_agPendiente)autoguardarSilencioso(); });
@@ -3362,6 +3954,11 @@ init();
 const SYNC_TOKEN   = 'CNM_SYNC_2026';
 const SYNC_PORT    = 5050;
 const SYNC_TIMEOUT = 800; // ms por IP al escanear
+
+// ── Compresión fotos para sync D2D (ntfy.sh) ──
+// Mismo criterio que el PC: 200px / 65% ≈ 30-50 KB por foto
+const FOTO_SYNC_MAX_PX  = 200;
+const FOTO_SYNC_CALIDAD = 0.65;
 
 let _syncIP   = null;  // IP del PC encontrado
 let _syncInfo = null;  // datos del /ping
@@ -3437,14 +4034,13 @@ async function syncBuscarPC(){
       if(encontrado){
         _syncIP=encontrado.ip;
         _syncInfo=encontrado.data;
-        // Mostrar info del PC
-        document.getElementById('sync-pc-nombre').textContent=_syncInfo.colegio||'Colegio CNM';
-        document.getElementById('sync-pc-ip').textContent=`${_syncIP}:${SYNC_PORT}`;
-        document.getElementById('sync-pc-ultimo').textContent=
-          _syncInfo.ultimo_updated_at?`Último registro PC: ${_syncInfo.ultimo_updated_at.substring(0,16).replace('T',' ')}h`:'';
-        document.getElementById('sync-pc-info').style.display='block';
+        const baseUrl=`http://${_syncIP}:${SYNC_PORT}`;
+        _mostrarInfoPC(_syncInfo, baseUrl);
         document.getElementById('sync-btn-ok').style.display='block';
-        _syncSet('✅','PC encontrado','Confirma para sincronizar los alumnos','ok');
+        const nivelPC=_syncInfo.nivel||'';
+        _syncSet('✅',
+          nivelPC?`PC encontrado — Nivel: ${nivelPC}`:'PC encontrado — Confirma para sincronizar',
+          'ok');
         return;
       }
     }
@@ -3579,13 +4175,169 @@ async function syncConfirmar(){
   }
 }
 
-let _syncBaseUrl = null;
+// ── Muestra info del PC encontrado + compara nivel con el móvil ──────────
+function _mostrarInfoPC(data, baseUrl){
+  const nivelPC    = data.nivel      || '';
+  const nivelClave = data.nivel_clave|| '';
+  const nivelMovil = _usuarioActual  ? (_usuarioActual.nivel||'') : '';
+
+  document.getElementById('sync-pc-nombre').textContent =
+    data.colegio || 'CNM PC';
+  document.getElementById('sync-pc-ip').textContent = baseUrl;
+  document.getElementById('sync-pc-ultimo').textContent =
+    data.ultimo_updated_at
+      ? 'Último: '+data.ultimo_updated_at.substring(0,16).replace('T',' ')+'h'
+      : '';
+
+  // Mostrar nivel del PC
+  const nivelWrap = document.getElementById('sync-pc-nivel-wrap');
+  const nivelLbl  = document.getElementById('sync-pc-nivel');
+  if(nivelPC){
+    nivelLbl.textContent = nivelPC;
+    // Color según nivel
+    const colNivel={'PRE BASICA':'#E8F0FE|#1F6FEB','BASICA':'#E6F4EC|#1A6B3A','MEDIA':'#FAEEDA|#8B6914'};
+    const [bg,col]=(colNivel[nivelPC]||'#F1EFE8|#5F5E5A').split('|');
+    nivelLbl.style.background=bg; nivelLbl.style.color=col;
+    nivelWrap.style.display='block';
+  } else {
+    nivelWrap.style.display='none';
+  }
+
+  // Advertencia si nivel PC ≠ nivel móvil
+  const warnEl = document.getElementById('sync-nivel-warn');
+  if(nivelPC && nivelMovil && nivelPC !== nivelMovil){
+    warnEl.style.display='block';
+    warnEl.innerHTML=`⚠ El PC está en <strong>${nivelPC}</strong> pero tú estás en <strong>${nivelMovil}</strong>.<br>
+      El sync traerá datos de <strong>${nivelPC}</strong>. Cambia el nivel en el PC si necesitas otro.`;
+  } else {
+    warnEl.style.display='none';
+  }
+
+  // Botón colegio completo — aparece siempre que hay al menos 1 nivel
+  const compWrap = document.getElementById('sync-completo-wrap');
+  if(nivelPC) compWrap.style.display='block';
+  else        compWrap.style.display='none';
+
+  document.getElementById('sync-pc-info').style.display='block';
+}
+
+// ── Sync colegio completo — itera los puertos de todos los niveles ────────
+// Mapeo de nivel_clave → puerto (igual que _NIVELES_CONFIG en el PC)
+const _PUERTOS_NIVEL = {
+  'pre_basica': 5050,
+  'basica':     5051,
+  'media':      5052,
+};
+const _LABELS_NIVEL = {
+  'pre_basica': 'PRE BÁSICA',
+  'basica':     'BÁSICA',
+  'media':      'MEDIA',
+};
+
+async function syncColegioCompleto(){
+  if(!_syncIP && !_syncBaseUrl){ toast('⚠ Sin conexión al PC','e'); return; }
+  const prog = document.getElementById('sync-completo-prog');
+  prog.style.display='block';
+  prog.textContent='⏳ Iniciando sync completo…';
+
+  const baseHost = _syncBaseUrl
+    ? new URL(_syncBaseUrl).origin   // tunnel: misma base, puerto distinto
+    : `http://${_syncIP}`;
+
+  let totalIns=0, totalAct=0, totalNiveles=0, errores=[];
+
+  for(const [clave, puerto] of Object.entries(_PUERTOS_NIVEL)){
+    const label = _LABELS_NIVEL[clave];
+    prog.textContent = `⏳ Sincronizando ${label}…`;
+    try{
+      // Verificar que ese nivel existe en el PC
+      const pingR = await fetch(`${baseHost}:${puerto}/ping`,{
+        headers:{'X-CNM-Token':SYNC_TOKEN},
+        signal:AbortSignal.timeout(5000)
+      });
+      if(!pingR.ok){ errores.push(`${label}: sin respuesta`); continue; }
+
+      // Buscar el usuario del móvil que corresponde a este nivel
+      const grupo = _usuarioActual?._grupoUsuarios||[];
+      const usrNivel = grupo.find(u=>(u.nivel||'').toUpperCase().replace(' ','')===(label.replace(' ','')));
+
+      // Abrir la BD del nivel correspondiente en el móvil
+      let dbNivel = null;
+      if(usrNivel){
+        const dbNom = `${DBN_PREFIX}${usrNivel.id}`;
+        dbNivel = await new Promise(res=>{
+          const r=indexedDB.open(dbNom,4);
+          r.onsuccess=e=>res(e.target.result);
+          r.onerror=()=>res(null);
+          r.onupgradeneeded=e=>{
+            const d=e.target.result;
+            if(!d.objectStoreNames.contains('alumnos')){
+              const s=d.createObjectStore('alumnos',{keyPath:'id',autoIncrement:true});
+              s.createIndex('uuid','uuid',{unique:true});
+              s.createIndex('updated_at','updated_at');
+            }
+            if(!d.objectStoreNames.contains('cfg'))
+              d.createObjectStore('cfg',{keyPath:'k'});
+          };
+        });
+      }
+
+      // Descargar registros del nivel
+      const ultimoLocal = '1970-01-01T00:00:00'; // sync completo siempre
+      const pullR = await fetch(`${baseHost}:${puerto}/pull?desde=${encodeURIComponent(ultimoLocal)}`,{
+        headers:{'X-CNM-Token':SYNC_TOKEN},
+        signal:AbortSignal.timeout(30000)
+      });
+      if(!pullR.ok){ errores.push(`${label}: error al descargar`); continue; }
+      const {registros} = await pullR.json();
+
+      // Fusionar en la BD correcta del móvil
+      const targetDB = usrNivel ? dbNivel : db; // si no hay usuario para ese nivel, usar BD activa
+      if(targetDB && registros.length){
+        let ins=0, act=0;
+        for(const reg of registros){
+          if(!reg.uuid) continue;
+          await new Promise(res=>{
+            const tx=targetDB.transaction('alumnos','readwrite');
+            const st=tx.objectStore('alumnos');
+            const idx=st.index('uuid');
+            idx.get(reg.uuid).onsuccess=e=>{
+              const local=e.target.result;
+              if(!local){
+                delete reg.id;
+                st.add(reg).onsuccess=()=>{ ins++; res(); };
+              } else if((reg.updated_at||'')>(local.updated_at||'')){
+                st.put({...local,...reg,id:local.id}).onsuccess=()=>{ act++; res(); };
+              } else res();
+            };
+          });
+        }
+        totalIns+=ins; totalAct+=act;
+      }
+      totalNiveles++;
+      prog.textContent=`✅ ${label}: ${registros.length} registros recibidos`;
+    }catch(e){
+      errores.push(`${label}: ${e.message||'error'}`);
+    }
+  }
+
+  if(errores.length){
+    prog.style.color='#C0392B';
+    prog.textContent=`⚠ ${totalNiveles} nivel(es) ok · Errores: ${errores.join(' | ')}`;
+  } else {
+    prog.style.color='#1A6B3A';
+    prog.textContent=`✅ Colegio completo: ${totalIns} nuevos · ${totalAct} actualizados en ${totalNiveles} nivel(es)`;
+  }
+  await buscar(); agMarcar();
+}
 
 function syncDigito(el, idx){
   el.value = el.value.replace(/[^0-9]/g,'').slice(-1);
   const digs = document.querySelectorAll('.sync-dig');
+  // Los primeros 4 dígitos (0-3) avanzan solos al siguiente
+  // Los últimos 2 (4-5) se tocan independiente — el separador visual indica el cambio de grupo
   if(el.value && idx < 3) digs[idx+1].focus();
-  // Auto-conectar cuando se completan 4 digitos
+  // Auto-conectar cuando se completan los 6 dígitos
   const codigo = Array.from(digs).map(d=>d.value).join('');
   if(codigo.length===6) setTimeout(()=>syncConCodigo(),300);
 }
@@ -3634,14 +4386,13 @@ async function syncConCodigo(){
       if(r2.ok){
         const data=await r2.json();
         _syncBaseUrl=url;
-        document.getElementById('sync-pc-nombre').textContent=data.colegio||'CNM PC';
-        document.getElementById('sync-pc-ip').textContent=url;
-        document.getElementById('sync-pc-ultimo').textContent=
-          data.ultimo_updated_at?'Último: '+data.ultimo_updated_at.substring(0,16).replace('T',' ')+'h':'';
-        document.getElementById('sync-pc-info').style.display='block';
+        _mostrarInfoPC(data, url);
         document.getElementById('sync-btn-ok').style.display='block';
         document.getElementById('sync-btn-push').style.display='block';
-        _syncSet('✅','PC encontrado — elige dirección','ok');
+        const nivelPC=data.nivel||'';
+        _syncSet('✅',
+          nivelPC?`PC encontrado — Nivel: ${nivelPC}`:'PC encontrado — elige dirección',
+          'ok');
         localStorage.setItem('cnm_sync_url',url);
         localStorage.setItem('cnm_sync_codigo',codigo);
       }else{
@@ -3677,14 +4428,13 @@ async function syncConUrl(){
     if(r.ok){
       const data=await r.json();
       _syncBaseUrl=base;
-      document.getElementById('sync-pc-nombre').textContent=data.colegio||'CNM PC';
-      document.getElementById('sync-pc-ip').textContent=base;
-      document.getElementById('sync-pc-ultimo').textContent=
-        data.ultimo_updated_at?'Último: '+data.ultimo_updated_at.substring(0,16).replace('T',' ')+'h':'';
-      document.getElementById('sync-pc-info').style.display='block';
+      _mostrarInfoPC(data, base);
       document.getElementById('sync-btn-ok').style.display='block';
       document.getElementById('sync-btn-push').style.display='block';
-      _syncSet('✅','PC encontrado — elige dirección sync','ok');
+      const nivelPC=data.nivel||'';
+      _syncSet('✅',
+        nivelPC?`PC encontrado — Nivel: ${nivelPC}`:'PC encontrado — elige dirección sync',
+        'ok');
       localStorage.setItem('cnm_sync_url',base);
     }else{
       _syncSet('❌','No autorizado','Verifica que la app PC esté abierta','err');
@@ -3694,6 +4444,250 @@ async function syncConUrl(){
     document.getElementById('sync-error-info').style.display='block';
     document.getElementById('sync-error-info').textContent='Error: '+(e.message||'timeout');
     document.getElementById('sync-btn-buscar').style.display='block';
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// SYNC DISPOSITIVO A DISPOSITIVO  (via ntfy.sh como relay)
+// ═══════════════════════════════════════════════════════
+
+const D2D_NTFY    = 'https://ntfy.sh';
+const D2D_PREFIX  = 'cnm-d2d-';
+const D2D_MAXSIZE = 240000; // ~240 KB por chunk (ntfy permite ~300 KB)
+
+function syncTab(tab){
+  document.getElementById('spanel-pc').style.display  = tab==='pc'  ? '' : 'none';
+  document.getElementById('spanel-mov').style.display = tab==='mov' ? '' : 'none';
+  const activo   = '#2ecc71', inactivo = '#888';
+  const bordeAct = '2.5px solid #2ecc71', bordeIn = '2.5px solid transparent';
+  document.getElementById('stab-pc').style.color        = tab==='pc'  ? activo  : inactivo;
+  document.getElementById('stab-pc').style.borderBottom = tab==='pc'  ? bordeAct: bordeIn;
+  document.getElementById('stab-mov').style.color        = tab==='mov' ? activo  : inactivo;
+  document.getElementById('stab-mov').style.borderBottom = tab==='mov' ? bordeAct: bordeIn;
+}
+
+function sd2dVolver(){
+  document.getElementById('sd2d-selector').style.display = '';
+  document.getElementById('sd2d-enviar').style.display   = 'none';
+  document.getElementById('sd2d-recibir').style.display  = 'none';
+}
+
+function sd2dMostrarRecibir(){
+  document.getElementById('sd2d-selector').style.display = 'none';
+  document.getElementById('sd2d-recibir').style.display  = '';
+  document.getElementById('sd2d-rec-estado').style.display = 'none';
+  // Limpiar dígitos
+  document.querySelectorAll('.sd2d-dig').forEach(d=>d.value='');
+  document.querySelectorAll('.sd2d-dig')[0].focus();
+}
+
+function sd2dDigito(el, idx){
+  el.value = el.value.replace(/[^0-9]/g,'').slice(-1);
+  const digs = document.querySelectorAll('.sd2d-dig');
+  if(el.value && idx < 3) digs[idx+1].focus();
+  const codigo = Array.from(digs).map(d=>d.value).join('');
+  if(codigo.length===6) setTimeout(()=>sd2dImportar(),300);
+}
+
+function sd2dBack(e, el, idx){
+  if(e.key==='Backspace'&&!el.value&&idx>0)
+    document.querySelectorAll('.sd2d-dig')[idx-1].focus();
+}
+
+function sd2dCopiarCodigo(){
+  const c = document.getElementById('sd2d-env-codigo').textContent.replace(/\s/g,'');
+  try{ navigator.clipboard.writeText(c); }catch(_){ /* fallback silencioso */ }
+  toast('📋 Código copiado','s');
+}
+
+// ── EXPORTAR: sube datos + fotos comprimidas en chunks a ntfy ──
+async function sd2dIniciarEnvio(){
+  document.getElementById('sd2d-selector').style.display = 'none';
+  document.getElementById('sd2d-enviar').style.display   = '';
+  document.getElementById('sd2d-env-codigo-wrap').style.display = 'none';
+  _sd2dSet('env','⏳','Preparando datos...','Leyendo base de datos local','scan');
+
+  try{
+    // 1. Obtener alumnos
+    const alumnos = (await iall('alumnos')).filter(a=>!a.deleted);
+    if(!alumnos.length){
+      _sd2dSet('env','⚠','Sin alumnos','No hay datos para exportar','warn');
+      return;
+    }
+
+    // 2. Comprimir fotos usando constantes (FOTO_SYNC_MAX_PX / FOTO_SYNC_CALIDAD)
+    const conFotos = alumnos.filter(a=>a.foto);
+    _sd2dSet('env','🖼️','Comprimiendo '+conFotos.length+' foto(s)...',
+      FOTO_SYNC_MAX_PX+'px / JPEG '+Math.round(FOTO_SYNC_CALIDAD*100)+'% para ntfy','scan');
+    const alumnosExport = await Promise.all(alumnos.map(async a=>{
+      const copia = {...a};
+      if(copia.foto) copia.foto = await _comprimirParaNtfy(copia.foto);
+      return copia;
+    }));
+
+    // 3. Serializar y dividir en chunks de 240 KB
+    const payload = JSON.stringify({v:2, ts:new Date().toISOString(), alumnos:alumnosExport});
+    const chunks  = [];
+    for(let i=0; i<payload.length; i+=D2D_MAXSIZE)
+      chunks.push(payload.slice(i, i+D2D_MAXSIZE));
+    const total = chunks.length;
+
+    // 4. Generar código único de 6 dígitos
+    const codigo = String(Math.floor(100000+Math.random()*900000));
+    const canal  = D2D_PREFIX + codigo;
+
+    _sd2dSet('env','📡','Subiendo datos...','Enviando '+alumnos.length+' alumnos en '+total+' parte(s)','scan');
+
+    // 5. Publicar metadata
+    await _d2dPost(canal,
+      JSON.stringify({meta:true, total, ts:new Date().toISOString(),
+                      count:alumnosExport.length, conFotos:conFotos.length}),
+      'CNM_D2D_META');
+
+    // 6. Publicar cada chunk
+    for(let i=0;i<chunks.length;i++){
+      _sd2dSet('env','📡','Subiendo parte '+(i+1)+' de '+total+'...','','scan');
+      await _d2dPost(canal, JSON.stringify({chunk:i, total, data:chunks[i]}), 'CNM_D2D_CHUNK');
+    }
+
+    // 7. Mostrar código
+    document.getElementById('sd2d-env-codigo').textContent = codigo;
+    document.getElementById('sd2d-env-codigo-wrap').style.display = '';
+    _sd2dSet('env','✅',
+      alumnos.length+' alumnos · '+conFotos.length+' fotos comprimidas a '+FOTO_SYNC_MAX_PX+'px',
+      'Dile al otro dispositivo que use "Importar" e ingrese el código','ok');
+
+  }catch(err){
+    _sd2dSet('env','❌','Error al exportar',err.message||'Error desconocido','err');
+  }
+}
+
+// ── IMPORTAR: descarga chunks desde ntfy, fusiona datos y fotos ──
+async function sd2dImportar(){
+  const digs   = document.querySelectorAll('.sd2d-dig');
+  const codigo = Array.from(digs).map(d=>d.value).join('');
+  if(codigo.length<6){ toast('⚠ Ingresa los 6 dígitos','e'); return; }
+
+  document.getElementById('sd2d-rec-estado').style.display = '';
+  _sd2dSet('rec','⏳','Buscando datos...','Código '+codigo,'scan');
+
+  try{
+    const canal = D2D_PREFIX + codigo;
+
+    // 1. Obtener todos los mensajes del canal
+    const r = await fetch(`${D2D_NTFY}/${canal}/json?poll=1&since=all`,{
+      signal: AbortSignal.timeout(15000)
+    });
+    const texto  = await r.text();
+    const lineas = texto.trim().split('\n').filter(Boolean);
+    if(!lineas.length){
+      _sd2dSet('rec','❌','Código no encontrado','Verifica el código e inténtalo de nuevo','err');
+      return;
+    }
+
+    // 2. Parsear mensajes
+    const mensajes = lineas
+      .map(l=>{ try{ return JSON.parse(l); }catch(_){ return null; } })
+      .filter(Boolean);
+
+    // 3. Encontrar metadata más reciente
+    let metaMsg = null;
+    for(const m of [...mensajes].reverse()){
+      try{
+        const d = JSON.parse(m.message||'{}');
+        if(d.meta){ metaMsg=d; break; }
+      }catch(_){}
+    }
+    if(!metaMsg){
+      _sd2dSet('rec','❌','Datos no encontrados','El código existe pero no contiene datos válidos','err');
+      return;
+    }
+
+    // 4. Verificar caducidad (10 min)
+    if((Date.now()-new Date(metaMsg.ts||0).getTime()) > 10*60*1000){
+      _sd2dSet('rec','❌','Código caducado','El código tiene más de 10 minutos · Genera uno nuevo','err');
+      return;
+    }
+
+    const totalChunks = metaMsg.total||1;
+    _sd2dSet('rec','📥',
+      'Descargando '+metaMsg.count+' alumnos ('+metaMsg.conFotos+' con foto)...',
+      'Recibiendo en '+totalChunks+' parte(s)','scan');
+
+    // 5. Recopilar chunks en orden
+    const chunksMap = {};
+    for(const m of mensajes){
+      try{
+        const d = JSON.parse(m.message||'{}');
+        if(d.chunk!==undefined) chunksMap[d.chunk] = d.data;
+      }catch(_){}
+    }
+    for(let i=0;i<totalChunks;i++){
+      if(!chunksMap[i]){
+        _sd2dSet('rec','❌','Datos incompletos','Falta la parte '+(i+1)+' · Genera un nuevo código','err');
+        return;
+      }
+    }
+
+    // 6. Reconstruir payload completo
+    const payloadCompleto = Array.from({length:totalChunks},(_,i)=>chunksMap[i]).join('');
+    const { alumnos: nuevos } = JSON.parse(payloadCompleto);
+
+    // 7. Fusionar con IndexedDB
+    //    - Si el alumno ya existe localmente Y tiene foto en alta resolución → conservar la local
+    //    - Si no existe → guardar con la foto comprimida recibida (mejor que nada)
+    _sd2dSet('rec','💾','Importando '+nuevos.length+' alumnos...','Fusionando · Las fotos locales en alta calidad se conservan','scan');
+    let ins=0, upd=0, fotosConservadas=0, fotosNuevas=0;
+    for(const a of nuevos){
+      if(!a.uuid) continue;
+      const ex = await getByUuid(a.uuid);
+      if(ex){
+        a.id = ex.id;
+        // Conservar foto local en alta resolución si existe
+        if(ex.foto){ a.foto=ex.foto; fotosConservadas++; }
+        else if(a.foto){ fotosNuevas++; }
+        await iput('alumnos',a); upd++;
+      }else{
+        delete a.id;
+        if(a.foto) fotosNuevas++;
+        await iput('alumnos',a); ins++;
+      }
+    }
+
+    await buscar(); await refreshUI(); agMarcar();
+    _sd2dSet('rec','✅','¡Importación completa!',
+      ins+' nuevos · '+upd+' actualizados · '+fotosConservadas+' fotos conservadas · '+fotosNuevas+' fotos importadas','ok');
+    toast('✓ '+nuevos.length+' alumnos importados','s');
+
+  }catch(err){
+    _sd2dSet('rec','❌','Error al importar',err.message||'Error desconocido','err');
+  }
+}
+
+// ── Helpers internos ──
+async function _d2dPost(canal, mensaje, titulo){
+  const r = await fetch(`${D2D_NTFY}/${canal}`,{
+    method:'POST',
+    headers:{ 'Title':titulo||'CNM_D2D', 'Priority':'default' },
+    body: mensaje,
+    signal: AbortSignal.timeout(15000)
+  });
+  if(!r.ok) throw new Error('Error ntfy: '+r.status);
+}
+
+function _sd2dSet(panel, icono, titulo, sub, tipo=''){
+  const colores={ok:'#E6F4EC',err:'#FDECEA',scan:'#F4F5F7',warn:'#FDF3DC'};
+  const bg = colores[tipo]||colores.scan;
+  if(panel==='env'){
+    document.getElementById('sd2d-env-estado').style.background = bg;
+    document.getElementById('sd2d-env-icono').textContent  = icono;
+    document.getElementById('sd2d-env-titulo').textContent = titulo;
+    document.getElementById('sd2d-env-sub').textContent    = sub;
+  } else {
+    document.getElementById('sd2d-rec-estado').style.background = bg;
+    document.getElementById('sd2d-rec-icono').textContent  = icono;
+    document.getElementById('sd2d-rec-titulo').textContent = titulo;
+    document.getElementById('sd2d-rec-sub').textContent    = sub;
   }
 }
 
@@ -3737,7 +4731,7 @@ async function guardarCambios(){
       'Aceptar'
     );
     document.getElementById('sb-txt').textContent = '💾 Guardado ' + hora;
-    setTimeout(()=>{ document.getElementById('sb-txt').textContent='CNM v58'; _agSetDot('idle'); }, 5000);
+    setTimeout(()=>{ document.getElementById('sb-txt').textContent='CNM v60'; _agSetDot('idle'); }, 5000);
   }catch(err){
     toast('⚠ Error al guardar: '+err.message,'e');
   }
