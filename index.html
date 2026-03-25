@@ -740,6 +740,7 @@ textarea.fi{resize:none;min-height:75px}
       <button class="tabbtn on" onclick="tab('tadm-col',this)">🏫 Colegio</button>
       <button class="tabbtn" onclick="tab('tadm-cred',this)">🔐 Credenciales</button>
       <button class="tabbtn" id="tab-usuarios-btn" onclick="tab('tadm-usr',this);cargarTabUsuarios()" style="display:none">👥 Usuarios</button>
+      <button class="tabbtn" onclick="tab('tadm-peligro',this);_initTabPeligro()" style="color:#E53935;font-weight:700">⚠ Peligro</button>
     </div>
     <!-- TAB COLEGIO -->
     <div class="tabc on" id="tadm-col">
@@ -797,6 +798,27 @@ textarea.fi{resize:none;min-height:75px}
         <button class="bp" onclick="abrirFormNuevoUsuario()" style="margin-bottom:12px;width:100%">＋ NUEVO USUARIO</button>
         <div id="lista-adm-usr" style="display:flex;flex-direction:column;gap:8px">
           <div style="text-align:center;color:#aaa;font-size:13px">Cargando...</div>
+        </div>
+      </div>
+    </div>
+    <!-- TAB PELIGRO -->
+    <div class="tabc" id="tadm-peligro">
+      <div class="fsec" style="border:2px solid #E53935;border-radius:10px;padding:14px">
+        <div class="stitle" style="color:#E53935">⚠ ZONA PELIGROSA</div>
+        <div style="font-size:11px;color:#888;margin-bottom:14px;line-height:1.6">
+          Estas acciones eliminan <strong>TODOS los alumnos</strong> de la base de datos.<br>
+          Se requiere la clave <strong>9999</strong> para confirmar.<br>
+          Se genera un respaldo automático en JSON antes de borrar.
+        </div>
+        <div style="background:#FFF5F5;border:1px solid #FFCDD2;border-radius:8px;padding:12px;margin-bottom:12px">
+          <div style="font-size:13px;font-weight:700;color:#C62828;margin-bottom:4px">🗑 Eliminar mi base de datos</div>
+          <div style="font-size:11px;color:#888;margin-bottom:10px">Borra todos los alumnos de <strong id="peligro-nivel-label">este nivel</strong>.</div>
+          <button class="bp" onclick="abrirEliminarBase('propia')" style="background:#E53935;width:100%">🗑 ELIMINAR MI BASE DE DATOS</button>
+        </div>
+        <div id="peligro-todas-wrap" style="display:none;background:#FFF5F5;border:1px solid #FFCDD2;border-radius:8px;padding:12px">
+          <div style="font-size:13px;font-weight:700;color:#C62828;margin-bottom:4px">🗑 Eliminar TODAS las bases</div>
+          <div style="font-size:11px;color:#888;margin-bottom:10px">Borra los alumnos de <strong>todos los usuarios/colegios</strong> del sistema.</div>
+          <button class="bp" onclick="abrirEliminarBase('todas')" style="background:#7B1FA2;width:100%">🗑 ELIMINAR TODAS LAS BASES</button>
         </div>
       </div>
     </div>
@@ -3040,6 +3062,133 @@ async function cambiarPinMod(){
   document.getElementById('pin-conf').value='';
   m.style.color='#4ade80';m.textContent='✓ PIN de modificación actualizado';
   toast('✓ PIN guardado','s');
+}
+
+// ─── ELIMINAR BASE DE DATOS ───────────────────────
+function _initTabPeligro(){
+  // Actualizar label con nivel del usuario actual
+  const lbl=document.getElementById('peligro-nivel-label');
+  if(lbl&&_usuarioActual) lbl.textContent=_usuarioActual.nivel||_usuarioActual.nombre_colegio||'esta base';
+  // Mostrar botón "todas" solo si es admin
+  const wrap=document.getElementById('peligro-todas-wrap');
+  if(wrap) wrap.style.display=(_usuarioActual&&_usuarioActual.esAdmin)?'block':'none';
+}
+
+function abrirEliminarBase(modo){
+  // modo: 'propia' | 'todas'
+  _initTabPeligro();
+  const titulo = modo==='todas'
+    ? '🗑 Eliminar TODAS las bases'
+    : '🗑 Eliminar mi base de datos';
+  const subtxt = modo==='todas'
+    ? 'Se borrarán los alumnos de TODOS los usuarios del sistema.'
+    : `Se borrarán TODOS los alumnos de: ${_usuarioActual?.nivel||_usuarioActual?.nombre_colegio||'esta base'}.`;
+
+  // Overlay de confirmación con clave
+  const ov=document.createElement('div');
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:10000;display:flex;align-items:center;justify-content:center';
+  const box=document.createElement('div');
+  box.style.cssText='background:#fff;border-radius:14px;padding:28px 24px;width:340px;max-width:95vw;text-align:center;box-shadow:0 8px 40px rgba(0,0,0,.4)';
+  box.innerHTML=`
+    <div style="font-size:38px;margin-bottom:6px">⚠</div>
+    <div style="font-size:15px;font-weight:700;color:#C62828;margin-bottom:6px">${titulo}</div>
+    <div style="font-size:12px;color:#555;margin-bottom:18px;line-height:1.5">${subtxt}<br><br>Ingresa la clave <strong>9999</strong> para confirmar:</div>
+    <input id="_elim-clave" type="password" maxlength="4" placeholder="••••"
+      style="width:80px;font-size:22px;text-align:center;border:2px solid #E53935;border-radius:8px;padding:8px;outline:none;letter-spacing:6px;margin-bottom:8px">
+    <div id="_elim-msg" style="font-size:12px;color:#E53935;min-height:16px;margin-bottom:12px"></div>
+    <div style="display:flex;gap:10px;justify-content:center">
+      <button id="_elim-btn" style="background:#E53935;color:#fff;border:none;border-radius:8px;padding:10px 22px;font-size:13px;font-weight:700;cursor:pointer">ELIMINAR</button>
+      <button id="_elim-cancel" style="background:#eee;color:#333;border:none;border-radius:8px;padding:10px 18px;font-size:13px;cursor:pointer">Cancelar</button>
+    </div>`;
+  ov.appendChild(box);
+  document.body.appendChild(ov);
+
+  const inp=box.querySelector('#_elim-clave');
+  const msg=box.querySelector('#_elim-msg');
+  const btnOk=box.querySelector('#_elim-btn');
+  const btnCan=box.querySelector('#_elim-cancel');
+  setTimeout(()=>inp.focus(),80);
+
+  btnCan.onclick=()=>ov.remove();
+  ov.onclick=e=>{if(e.target===ov)ov.remove()};
+
+  async function _ejecutarEliminar(){
+    if(inp.value.trim()!=='9999'){
+      msg.textContent='⚠ Clave incorrecta';
+      inp.value=''; inp.focus(); return;
+    }
+    btnOk.disabled=true; btnOk.textContent='Eliminando…';
+    try{
+      if(modo==='propia'){
+        // Respaldo automático JSON antes de borrar
+        await _respaldoAutoJSON('antes_eliminar');
+        // Limpiar objectStore alumnos de la BD actual
+        await new Promise((res,rej)=>{
+          const t=db.transaction('alumnos','readwrite');
+          t.objectStore('alumnos').clear().onsuccess=()=>res();
+          t.onerror=e=>rej(e);
+        });
+        ov.remove(); closeM('madmin');
+        toast('✅ Base de datos eliminada — respaldo guardado','s');
+        await cargarLista();
+      } else {
+        // Admin: eliminar todos los usuarios' DBs
+        await _respaldoAutoJSON('antes_eliminar_todo');
+        // Limpiar BD actual
+        await new Promise((res,rej)=>{
+          const t=db.transaction('alumnos','readwrite');
+          t.objectStore('alumnos').clear().onsuccess=()=>res();
+          t.onerror=e=>rej(e);
+        });
+        // Limpiar BDs de todos los usuarios registrados
+        const todos=await iallA('usuarios');
+        for(const u of todos){
+          const dbN=u.esAdmin?'cnm_v4_admin':(DBN_PREFIX+u.id);
+          try{
+            await new Promise((res,rej)=>{
+              const r=indexedDB.open(dbN,DBV);
+              r.onsuccess=ev=>{
+                const tdb=ev.target.result;
+                if(tdb.objectStoreNames.contains('alumnos')){
+                  const t=tdb.transaction('alumnos','readwrite');
+                  t.objectStore('alumnos').clear().onsuccess=()=>{tdb.close();res()};
+                  t.onerror=()=>{tdb.close();res()};
+                } else{tdb.close();res();}
+              };
+              r.onerror=()=>res();
+            });
+          }catch(e){}
+        }
+        ov.remove(); closeM('madmin');
+        toast('✅ Todas las bases eliminadas — respaldo guardado','s');
+        await cargarLista();
+      }
+    }catch(ex){
+      msg.textContent='Error: '+ex;
+      btnOk.disabled=false; btnOk.textContent='ELIMINAR';
+    }
+  }
+
+  btnOk.onclick=_ejecutarEliminar;
+  inp.addEventListener('keydown',e=>{if(e.key==='Enter')_ejecutarEliminar()});
+}
+
+async function _respaldoAutoJSON(sufijo){
+  try{
+    const all=await iall('alumnos');
+    const cfg=await iall('cfg');
+    const blob=new Blob([JSON.stringify({
+      version:1, ts:ts(),
+      usuario:_usuarioActual?.usuario||'',
+      nivel:_usuarioActual?.nivel||'',
+      alumnos:all, config:cfg
+    },null,2)],{type:'application/json'});
+    const a=document.createElement('a');
+    const fecha=new Date().toISOString().slice(0,19).replace(/:/g,'-');
+    a.href=URL.createObjectURL(blob);
+    a.download=`CNM_respaldo_${sufijo}_${fecha}.json`;
+    a.click(); URL.revokeObjectURL(a.href);
+  }catch(e){}
 }
 
 // ─── PIN DE MODIFICACIÓN ──────────────────────────
