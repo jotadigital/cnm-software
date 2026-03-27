@@ -413,36 +413,9 @@ textarea.fi{resize:none;min-height:75px}
         <div style="font-size:12px;color:#aaa;margin-top:2px">Sistema Escolar v60</div>
       </div>
 
-      <!-- Tarjetas de acceso -->
+      <!-- Tarjetas de acceso — generadas dinámicamente por renderLoginCards() -->
       <div id="login-cards" style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px">
-
-        <!-- Admin -->
-        <button onclick="loginElegir('admin','ADMINISTRADOR','','0000',true)"
-          style="display:flex;align-items:center;gap:12px;background:#FDF3DC;border:1.5px solid #C9A84C;border-radius:12px;padding:12px 16px;cursor:pointer;width:100%;text-align:left;transition:all .15s"
-          onmouseover="this.style.borderColor='#8B6914'" onmouseout="this.style.borderColor='#C9A84C'">
-          <div style="width:40px;height:40px;border-radius:50%;background:#C9A84C;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">👑</div>
-          <div>
-            <div style="font-size:14px;font-weight:700;color:#8B6914">Administrador</div>
-            <div style="font-size:11px;color:#BA7517">Acceso total al sistema</div>
-          </div>
-          <div style="margin-left:auto;color:#C9A84C;font-size:20px">›</div>
-        </button>
-
-        <!-- Colegio Maipú -->
-        <button onclick="loginElegir('COLEGIO MAIPU PRE BASICA','COLEGIO MAIPU','PRE BASICA','1234',false)"
-          style="display:flex;align-items:center;gap:12px;background:#E8F0FE;border:1.5px solid #1F6FEB;border-radius:12px;padding:12px 16px;cursor:pointer;width:100%;text-align:left;transition:all .15s"
-          onmouseover="this.style.borderColor='#0C447C'" onmouseout="this.style.borderColor='#1F6FEB'">
-          <div style="width:40px;height:40px;border-radius:50%;background:#1F6FEB;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🏫</div>
-          <div style="flex:1">
-            <div style="font-size:14px;font-weight:700;color:#185FA5">Colegio Maipú</div>
-            <div style="display:flex;gap:4px;margin-top:4px">
-              <span style="font-size:10px;background:#E8F0FE;color:#1F6FEB;border:1px solid #85B7EB;border-radius:8px;padding:1px 6px;font-weight:700">PRE BÁSICA</span>
-              <span style="font-size:10px;background:#E6F4EC;color:#1A6B3A;border:1px solid #97C459;border-radius:8px;padding:1px 6px;font-weight:700">BÁSICA</span>
-              <span style="font-size:10px;background:#FAEEDA;color:#8B6914;border:1px solid #EF9F27;border-radius:8px;padding:1px 6px;font-weight:700">MEDIA</span>
-            </div>
-          </div>
-          <div style="margin-left:auto;color:#1F6FEB;font-size:20px">›</div>
-        </button>
+        <div style="text-align:center;color:#aaa;padding:12px;font-size:12px">Cargando...</div>
       </div>
 
       <!-- Campo contraseña (aparece al elegir) -->
@@ -506,7 +479,7 @@ textarea.fi{resize:none;min-height:75px}
     </div>
   </div>
 
-  <div id="layout"yout">
+  <div id="layout">
     <div id="ov" onclick="closeSB()"></div>
 
     <!-- SIDEBAR -->
@@ -528,6 +501,7 @@ textarea.fi{resize:none;min-height:75px}
       <button class="nb" onclick="openSyncWifi();closeSB()" style="color:#2ecc71"><span class="ni">↕</span>Sync WiFi PC</button>
       <button class="nb" onclick="openAdmin();closeSB()"><span class="ni">⚙</span>Administración</button>
       <button class="nb" id="btn-gest-usuarios" onclick="openGestUsuarios();closeSB()" style="display:none;color:var(--blue)"><span class="ni">👥</span>Gestión Usuarios</button>
+      <button class="nb" id="btn-gest-colegios" onclick="abrirModalNuevoColegio();closeSB()" style="display:none;color:var(--gold)"><span class="ni">🏫</span>Gestión Colegios</button>
       <div style="height:1px;background:var(--border2);margin:8px 0"></div>
       <button class="nb" onclick="cerrarSesion();closeSB()" style="color:var(--red)"><span class="ni">🔒</span>Cerrar sesión</button>
       <button class="nb" id="btn-instalar" onclick="instalarApp()" style="display:none;color:var(--gold)">
@@ -856,6 +830,63 @@ textarea.fi{resize:none;min-height:75px}
   <div style="position:absolute;right:8px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:8px;z-index:200">
     <button class="sbtn" style="width:46px;height:46px;font-size:22px" onclick="scrollModal('mgestionusr-body',-300)">▲</button>
     <button class="sbtn" style="width:46px;height:46px;font-size:22px" onclick="scrollModal('mgestionusr-body',300)">▼</button>
+  </div>
+ </div>
+</div>
+
+<!-- ═══ MODAL NUEVO COLEGIO ═══ -->
+<div class="mov" id="mformcolegio">
+ <div class="modal" style="position:relative;display:flex;flex-direction:column;max-height:90vh">
+  <div class="mstripe" style="background:#8B6914"></div>
+  <div class="mhdr">
+    <div class="mtitle" style="color:#8B6914">🏫 NUEVO COLEGIO</div>
+    <button class="mclose" onclick="closeM('mformcolegio')">✕</button>
+  </div>
+  <div class="mbody" style="flex:1;overflow-y:auto">
+    <div class="fsec">
+      <div class="stitle">📋 DATOS DEL COLEGIO</div>
+      <div class="frow">
+        <label class="fl">NOMBRE DEL COLEGIO</label>
+        <input id="fc-nombre" class="fi" placeholder="Ej: COLEGIO MAIPU"
+          oninput="this.value=this.value.toUpperCase()">
+        <span style="font-size:10px;color:#8B6914;margin-top:3px;display:block">
+          Se crearán 3 usuarios: PRE BASICA · BASICA · MEDIA con esta contraseña
+        </span>
+      </div>
+    </div>
+    <div class="fsec">
+      <div class="stitle">🔐 CONTRASEÑA DE ACCESO</div>
+      <div class="frow">
+        <label class="fl">CONTRASEÑA</label>
+        <input id="fc-pwd" class="fi" type="password" placeholder="Mínimo 4 caracteres" autocomplete="new-password">
+      </div>
+      <div class="frow">
+        <label class="fl">CONFIRMAR CONTRASEÑA</label>
+        <input id="fc-pwd2" class="fi" type="password" placeholder="Repite la contraseña" autocomplete="new-password">
+      </div>
+    </div>
+    <div class="fsec">
+      <div class="stitle">ℹ️ INFORMACIÓN</div>
+      <div style="font-size:12px;color:#666;line-height:1.7;padding:4px 0">
+        Se crearán automáticamente <strong>3 usuarios</strong> con la misma contraseña:<br>
+        <span style="color:#1F6FEB;font-weight:700">PRE BASICA</span> ·
+        <span style="color:#1A6B3A;font-weight:700">BASICA</span> ·
+        <span style="color:#8B6914;font-weight:700">MEDIA</span><br><br>
+        Cada nivel tiene su propia base de datos independiente.<br>
+        Luego puedes importar la BD del PC (.db o .json) al nivel correspondiente.
+      </div>
+    </div>
+    <div id="fc-msg" style="font-size:12px;min-height:16px;padding:4px 8px;border-radius:6px;margin:0 14px 8px"></div>
+    <div class="fsec">
+      <div class="stitle">📋 COLEGIOS REGISTRADOS</div>
+      <div id="fc-lista" style="margin-top:6px">
+        <div style="color:#aaa;font-size:12px">Cargando...</div>
+      </div>
+    </div>
+  </div>
+  <div class="mftr" style="flex-shrink:0">
+    <button class="bg" onclick="closeM('mformcolegio')">Cancelar</button>
+    <button class="bp" style="background:#8B6914" onclick="guardarNuevoColegio()">🏫 Crear Colegio</button>
   </div>
  </div>
 </div>
@@ -1450,6 +1481,9 @@ function openAdminDB(intento=1){
           if(!d.objectStoreNames.contains('usuarios')){
             const s=d.createObjectStore('usuarios',{keyPath:'id',autoIncrement:true});
             s.createIndex('usuario','usuario',{unique:true});
+          }
+          if(!d.objectStoreNames.contains('colegios')){
+            d.createObjectStore('colegios',{keyPath:'id',autoIncrement:true});
           }
         }catch(ex){console.warn('upgrade error:',ex);}
       };
@@ -2829,40 +2863,192 @@ async function importarSQLite(file){
     const buf=await file.arrayBuffer();
     const sdb=new SQL.Database(new Uint8Array(buf));
 
-    // Verificar tabla
+    // ── Verificar tabla alumnos ──
     const tables=sdb.exec("SELECT name FROM sqlite_master WHERE type='table'");
     const names=(tables[0]?.values||[]).flat();
-    if(!names.includes('alumnos')){toast('⚠ No es una BD CNM válida','e');return}
+    if(!names.includes('alumnos')){sdb.close();toast('⚠ No es una BD CNM válida','e');return;}
 
-    // Leer columnas disponibles
-    const colInfo=sdb.exec("PRAGMA table_info(alumnos)");
-    const colNames=(colInfo[0]?.values||[]).map(r=>r[1]);
-    console.log('Columnas BD:', colNames);
+    // ── Leer metadatos del .db: colegio, nivel, etc. ──
+    let metaColegio='', metaNivelClave='', metaNivelLabel='';
+    if(names.includes('config_colegio')){
+      const cr=sdb.exec("SELECT clave,valor FROM config_colegio");
+      if(cr.length){
+        for(const[clave,valor] of cr[0].values){
+          if(clave==='nombre_colegio'||clave==='colegio_nombre') metaColegio=metaColegio||valor||'';
+          if(clave==='nivel_clave')  metaNivelClave=valor||'';
+          if(clave==='nivel_label')  metaNivelLabel=valor||'';
+        }
+      }
+    }
 
-    // Leer todos los registros activos
+    // ── Leer registros ──
     const res=sdb.exec("SELECT * FROM alumnos WHERE deleted=0 OR deleted IS NULL");
-    if(!res.length){toast('⚠ No hay alumnos en la base de datos','e');return}
-
-    const cols=res[0].columns; // nombres reales de columnas en el resultado
+    if(!res.length){sdb.close();toast('⚠ No hay alumnos en la base de datos','e');return;}
+    const cols=res[0].columns;
     const rows=res[0].values;
-    console.log('Cols resultado:', cols, '| Total filas:', rows.length);
+    sdb.close();
 
-    let ins=0,upd=0;
+    // ── PASO CRÍTICO: elegir usuario/nivel destino ──
+    // Si hay múltiples usuarios (grupo), mostrar selector
+    const todosUsr = await iallA('usuarios');
+    const nivelOrd={'PRE BASICA':1,'BASICA':2,'MEDIA':3};
+    // Filtrar usuarios con nivel (excluir admin)
+    const usrsConNivel = todosUsr.filter(u=>!u.esAdmin && u.nivel);
+    usrsConNivel.sort((a,b)=>{
+      const ga=a.colegio_grupo||a.nombre_colegio||'';
+      const gb=b.colegio_grupo||b.nombre_colegio||'';
+      return ga.localeCompare(gb)||(nivelOrd[a.nivel]||9)-(nivelOrd[b.nivel]||9);
+    });
+
+    // Pre-seleccionar usuario por metadatos del archivo
+    let idxDefault=0;
+    const nivelMapeo={'pre_basica':'PRE BASICA','basica':'BASICA','media':'MEDIA'};
+    const nivelMovilMeta = nivelMapeo[metaNivelClave] || metaNivelLabel.replace(/[^A-Z ]/gi,'').trim().toUpperCase() || '';
+    for(let i=0;i<usrsConNivel.length;i++){
+      const u=usrsConNivel[i];
+      const matchCol = metaColegio && (u.colegio_grupo||u.nombre_colegio||'').toUpperCase()===metaColegio.toUpperCase();
+      const matchNiv = nivelMovilMeta && (u.nivel||'').toUpperCase()===nivelMovilMeta;
+      if(matchCol && matchNiv){ idxDefault=i; break; }
+      if(matchCol && !nivelMovilMeta){ idxDefault=i; break; }
+    }
+
+    // Si hay un solo usuario activo — importar directo sin diálogo
+    let usrDestino = _usuarioActual;
+    if(usrsConNivel.length > 1){
+      const colNivel={'PRE BASICA':'#E8F0FE|#1F6FEB','BASICA':'#E6F4EC|#1A6B3A','MEDIA':'#FAEEDA|#8B6914'};
+      const nivelInfo = metaNivelLabel||metaNivelClave||'';
+      const colegioInfo = metaColegio||'';
+
+      // Construir modal de selección
+      const overlay=document.createElement('div');
+      overlay.id='import-dest-modal';
+      overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:10001;display:flex;align-items:center;justify-content:center;padding:16px';
+
+      // Agrupar por colegio para mostrar organizadamente
+      const grupos={};
+      usrsConNivel.forEach(u=>{
+        const g=u.colegio_grupo||u.nombre_colegio||u.usuario;
+        if(!grupos[g]) grupos[g]=[];
+        grupos[g].push(u);
+      });
+
+      let opcsHtml='';
+      let globalIdx=0;
+      for(const [grpName, usrs] of Object.entries(grupos)){
+        opcsHtml+=`<div style="font-size:11px;font-weight:800;color:#888;letter-spacing:.5px;margin:10px 0 4px;text-transform:uppercase">${grpName}</div>`;
+        for(const u of usrs){
+          const esDefecto=globalIdx===idxDefault;
+          const [bg,col]=(colNivel[u.nivel]||'#F1EFE8|#5F5E5A').split('|');
+          const esActivo=u.id===_usuarioActual?.id;
+          opcsHtml+=`<button data-idx="${globalIdx}"
+            style="display:flex;align-items:center;gap:10px;width:100%;text-align:left;
+                   padding:9px 12px;margin-bottom:5px;
+                   background:${esDefecto?bg:'#F7F8FA'};
+                   color:${esDefecto?col:'#333'};
+                   border:${esDefecto?'2px':'1.5px'} solid ${esDefecto?col:'#DDE0E4'};
+                   border-radius:8px;cursor:pointer;font-size:13px;font-weight:700;font-family:Rajdhani,sans-serif">
+            <span style="background:${bg};color:${col};border-radius:12px;padding:2px 10px;font-size:12px;font-weight:800;white-space:nowrap">${u.nivel}</span>
+            <span>${u.usuario}${esActivo?' ✓':''}${esDefecto?' 🎯':''}</span>
+          </button>`;
+          globalIdx++;
+        }
+      }
+
+      overlay.innerHTML=`
+        <div style="background:#fff;border-radius:16px;padding:20px;width:100%;max-width:380px;max-height:85vh;overflow-y:auto">
+          <div style="font-size:15px;font-weight:800;color:#111;margin-bottom:4px;font-family:Rajdhani,sans-serif">📥 ¿A qué nivel importar?</div>
+          ${colegioInfo||nivelInfo?`<div style="font-size:12px;color:#888;margin-bottom:4px">
+            Archivo: ${colegioInfo?`<strong>${colegioInfo}</strong>`:''}${nivelInfo?` › ${nivelInfo}`:''}
+            · ${rows.length} alumnos
+          </div>`:`<div style="font-size:12px;color:#888;margin-bottom:4px">${rows.length} alumnos · elige el destino</div>`}
+          <div style="font-size:11px;color:#1A6B3A;background:#E6F4EC;border-radius:6px;padding:6px 10px;margin-bottom:12px">
+            ✓ Se fusionan datos — no se borra nada existente
+          </div>
+          ${opcsHtml}
+          <button id="import-dest-cancel"
+            style="width:100%;padding:10px;background:none;border:1px solid #DDE0E4;border-radius:8px;
+                   cursor:pointer;font-size:13px;color:#888;font-family:Rajdhani,sans-serif;margin-top:6px">
+            Cancelar
+          </button>
+        </div>`;
+      window._importDestIdx=null;
+      document.body.appendChild(overlay);
+      overlay.querySelectorAll('button[data-idx]').forEach(btn=>{
+        btn.addEventListener('click',()=>{
+          window._importDestIdx=parseInt(btn.dataset.idx);
+          overlay.remove();
+        });
+      });
+      document.getElementById('import-dest-cancel').addEventListener('click',()=>{
+        window._importDestIdx=-1; overlay.remove();
+      });
+      await new Promise(res=>{
+        const chk=setInterval(()=>{ if(window._importDestIdx!==null){clearInterval(chk);res();} },80);
+      });
+      if(window._importDestIdx===-1){ window._importDestIdx=null; return; }
+      usrDestino = usrsConNivel[window._importDestIdx];
+      window._importDestIdx=null;
+    }
+
+    // ── Abrir la BD del usuario destino ──
+    const dbDestNom=`${DBN_PREFIX}${usrDestino.id}`;
+    let dbDest;
+    if(dbDestNom===(_usuarioActual?.dbName)){
+      dbDest=db; // misma BD activa — sin overhead
+    }else{
+      dbDest=await new Promise(res=>{
+        const r=indexedDB.open(dbDestNom,DBV);
+        r.onsuccess=e=>res(e.target.result);
+        r.onerror=()=>res(null);
+        r.onupgradeneeded=e=>{
+          const d=e.target.result;
+          if(!d.objectStoreNames.contains('alumnos')){
+            const s=d.createObjectStore('alumnos',{keyPath:'id',autoIncrement:true});
+            s.createIndex('uuid','uuid',{unique:false});
+            s.createIndex('updated_at','updated_at');
+          }
+          if(!d.objectStoreNames.contains('cfg')) d.createObjectStore('cfg',{keyPath:'k'});
+          if(!d.objectStoreNames.contains('pdfs')) d.createObjectStore('pdfs',{keyPath:'id',autoIncrement:true});
+        };
+      });
+      if(!dbDest){ toast('⚠ No se pudo abrir la BD destino','e'); return; }
+    }
+
+    // Helper para escribir en dbDest
+    const iputDest=(o)=>new Promise(r=>{
+      const t=dbDest.transaction('alumnos','readwrite');
+      t.objectStore('alumnos').put(o).onsuccess=e=>r(e.target.result);
+    });
+    const getByUuidDest=(uuid)=>new Promise(r=>{
+      const t=dbDest.transaction('alumnos','readonly');
+      t.objectStore('alumnos').index('uuid').get(uuid).onsuccess=e=>r(e.target.result);
+    });
+
+    // ── Insertar/actualizar registros en la BD destino ──
+    let ins=0,upd=0,rep=0,sinFoto=0;
     for(const row of rows){
-      // Mapeo columna por nombre — robusto sin importar el orden
       const raw={};
-      cols.forEach((c,i)=>{ raw[c] = row[i]; });
+      cols.forEach((c,i)=>{ raw[c]=row[i]; });
 
-      console.log('Fila raw:', raw.id, raw.nombre, raw.rut, raw.curso);
+      // ── Sanear uuid: si viene vacío/nulo, generar uno nuevo (no omitir) ──
+      let uuidFinal = (raw.uuid && String(raw.uuid).trim()) ? String(raw.uuid).trim() : null;
+      if(!uuidFinal){ uuidFinal = uid(); rep++; }
 
-      // Construir objeto PWA con campos explícitos
+      // ── Sanear foto: debe ser base64 Data URI; si es ruta de archivo local, descartar ──
+      let fotoFinal = raw.foto || '';
+      if(fotoFinal && !String(fotoFinal).startsWith('data:')){
+        // Es una ruta de archivo del PC (ej: C:otos\...) — no sirve en el móvil
+        fotoFinal = '';
+        sinFoto++;
+      }
+
       const a={
         rut:              String(raw.rut||''),
         nombre:           String(raw.nombre||''),
         curso:            String(raw.curso||''),
         curso_origen:     String(raw.curso_origen||''),
         direccion:        String(raw.direccion||''),
-        foto:             raw.foto||'',
+        foto:             fotoFinal,
         papa:             String(raw.papa||''),
         papa_tel:         String(raw.papa_tel||''),
         mama:             String(raw.mama||''),
@@ -2872,43 +3058,36 @@ async function importarSQLite(file){
         medicamento:      String(raw.medicamento||''),
         enfermedad_cronica: String(raw.enfermedad_cronica||''),
         observaciones:    String(raw.observaciones||''),
-        uuid:             String(raw.uuid||uid()),
+        uuid:             uuidFinal,
         updated_at:       String(raw.updated_at||'2024-01-01T00:00:00'),
         deleted:          0,
         comuna:           String(raw.comuna||''),
       };
+      if(!a.nombre||a.nombre==='null'||a.nombre==='undefined') a.nombre='(Sin nombre)';
 
-      // Validar que nombre no esté vacío
-      if(!a.nombre||a.nombre==='null'||a.nombre==='undefined')a.nombre='(Sin nombre)';
-
-      const ex=await getByUuid(a.uuid);
+      const ex=await getByUuidDest(a.uuid);
       if(ex){
-        // Existe: siempre actualizar — no comparar fechas para no perder cambios
         a.id=ex.id;
-        // Conservar foto local si el .db importado no trae foto
-        if(!a.foto&&ex.foto) a.foto=ex.foto;
-        await iput('alumnos',a); upd++;
+        // Conservar foto local si el importado no trae foto válida
+        if(!a.foto && ex.foto) a.foto=ex.foto;
+        await iputDest(a); upd++;
       }else{
-        // Nuevo: eliminar id para que IndexedDB asigne uno propio
         delete a.id;
-        await iput('alumnos',a); ins++;
+        await iputDest(a); ins++;
       }
     }
 
-    // Config colegio
-    if(names.includes('config_colegio')){
-      const cr=sdb.exec("SELECT clave,valor FROM config_colegio");
-      if(cr.length){
-        const skip=['logo_path','sync_port'];
-        for(const[clave,valor]of cr[0].values){
-          if(!skip.includes(clave)&&valor)await scfg(clave,valor);
-        }
-      }
+    // Si importamos en BD activa, refrescar vista
+    if(dbDestNom===(_usuarioActual?.dbName)){
+      await buscar(); await refreshUI(); agMarcar();
     }
-    sdb.close();
-    await buscar(); await refreshUI();
-    agMarcar();
-    toast(`✓ Importación completa: ${ins} nuevos, ${upd} actualizados`,'s');
+
+    const nivelDestLabel=usrDestino.nivel||usrDestino.usuario;
+    const colegioDestLabel=usrDestino.colegio_grupo||usrDestino.nombre_colegio||'';
+    let msgExtra='';
+    if(rep>0)  msgExtra+=`\n⚠ ${rep} registros sin UUID reparados automáticamente`;
+    if(sinFoto>0) msgExtra+=`\n⚠ ${sinFoto} fotos descartadas (eran rutas de PC, no imágenes)`;
+    toast(`✓ ${ins} nuevos · ${upd} actualizados → ${colegioDestLabel?colegioDestLabel+' › ':''}${nivelDestLabel}${msgExtra}`,'s',sinFoto||rep?6000:3000);
   }catch(err){
     console.error('Error importarSQLite:',err);
     toast('⚠ Error al leer el .db: '+err.message,'e');
@@ -2920,31 +3099,39 @@ async function importarJSON(file){
   let data;
   try{data=JSON.parse(await file.text())}catch(x){toast('⚠ Archivo JSON inválido','e');return}
   if(!data.alumnos){toast('⚠ No es un backup CNM válido','e');return}
-  let ins=0,upd=0;
+  let ins=0,upd=0,rep=0,sinFoto=0;
   for(const a of data.alumnos){
-    if(!a.uuid)a.uuid=uid();
-    // Normalizar campo emergencia_tel (JSONs viejos usaban emerg_tel)
+    // ── uuid vacío: generar uno nuevo en vez de omitir ──
+    if(!a.uuid || !String(a.uuid).trim()){ a.uuid=uid(); rep++; }
+    // ── Normalizar campo emergencia_tel (JSONs viejos usaban emerg_tel) ──
     if(a.emerg_tel!==undefined && a.emergencia_tel===undefined){
       a.emergencia_tel=a.emerg_tel; delete a.emerg_tel;
     }
+    // ── Sanear foto: descartar si es ruta de archivo (no base64) ──
+    if(a.foto && !String(a.foto).startsWith('data:')){
+      a.foto=''; sinFoto++;
+    }
     const ex=await getByUuid(a.uuid);
     if(ex){
-      // Siempre actualizar — no comparar updated_at para no perder cambios
       a.id=ex.id;
       if(!a.foto&&ex.foto) a.foto=ex.foto;
       await iput('alumnos',a); upd++;
+    }else{
+      delete a.id; await iput('alumnos',a); ins++;
     }
-    else{delete a.id;await iput('alumnos',a);ins++}
   }
   if(data.config&&Array.isArray(data.config)){
+    const skipCfg=new Set(['logo_path','sync_port','nivel_clave','nivel_label','colegio_nombre']);
     for(const c of data.config){
-      if(c.clave&&c.valor!==undefined)await scfg(c.clave,c.valor);
-      if(c.k&&c.v!==undefined)await scfg(c.k,c.v);
+      const k=c.clave||c.k||''; const v=c.valor!==undefined?c.valor:c.v;
+      if(k&&!skipCfg.has(k)&&v!==undefined) await scfg(k,v);
     }
   }
-  buscar();refreshUI();
-  agMarcar();
-  toast(`✓ ${ins} insertados, ${upd} actualizados`,'s');
+  await buscar(); await refreshUI(); agMarcar();
+  let msgExtra='';
+  if(rep>0)   msgExtra+=' · '+rep+' UUID reparados';
+  if(sinFoto>0) msgExtra+=' · '+sinFoto+' fotos-ruta descartadas';
+  toast('✓ '+ins+' nuevos, '+upd+' actualizados'+msgExtra,'s',sinFoto||rep?6000:3000);
 }
 
 function getByUuid(uuid){
@@ -3638,6 +3825,8 @@ async function refreshUI(){
   }
   const btnGU=document.getElementById('btn-gest-usuarios');
   if(btnGU) btnGU.style.display=(_usuarioActual&&_usuarioActual.esAdmin)?'flex':'none';
+  const btnGC2=document.getElementById('btn-gest-colegios');
+  if(btnGC2) btnGC2.style.display=(_usuarioActual&&_usuarioActual.esAdmin)?'flex':'none';
   await restaurarAutoguardado();
   await buscar();
 }
@@ -3649,8 +3838,22 @@ function _actualizarSelectorNivel(){
   const wrap = document.getElementById('nivel-selector');
   if(!wrap) return;
   const grupo = _usuarioActual?._grupoUsuarios;
+  const nivelActual = _usuarioActual?.nivel||'';
+
+  // Si solo hay un nivel (sin grupo), mostrar badge de nivel activo
   if(!grupo || grupo.length <= 1){
-    wrap.style.display='none';
+    if(nivelActual){
+      const colNivelBadge={
+        'PRE BASICA':['#E8F0FE','#1F6FEB'],
+        'BASICA':    ['#E6F4EC','#1A6B3A'],
+        'MEDIA':     ['#FAEEDA','#8B6914']
+      };
+      const [bg,col]=colNivelBadge[nivelActual]||['#F1EFE8','#5F5E5A'];
+      wrap.innerHTML=`<span style="background:${bg};color:${col};border:2px solid ${col};border-radius:20px;padding:4px 14px;font-size:12px;font-weight:800;font-family:Rajdhani,sans-serif;letter-spacing:.5px">${nivelActual}</span>`;
+      wrap.style.cssText='display:flex;align-items:center;gap:4px;flex-wrap:wrap';
+    } else {
+      wrap.style.display='none';
+    }
     return;
   }
   const nivelOrd={'PRE BASICA':1,'BASICA':2,'MEDIA':3};
@@ -4028,6 +4231,279 @@ async function restaurarAutoguardado(){
 }
 
 // ══ NUEVO LOGIN SIMPLIFICADO ══
+// ═══════════════════════════════════════════════════
+//  SISTEMA MULTI-COLEGIO DINÁMICO
+// ═══════════════════════════════════════════════════
+
+// Colores disponibles para colegios (rotativo)
+const _COLORES_COLEGIO = [
+  {color:'#1F6FEB', bg:'#E8F0FE', border:'#85B7EB'},
+  {color:'#1A6B3A', bg:'#E6F4EC', border:'#97C459'},
+  {color:'#8B6914', bg:'#FAEEDA', border:'#EF9F27'},
+  {color:'#6B21A8', bg:'#F3E8FF', border:'#C084FC'},
+  {color:'#B91C1C', bg:'#FEE2E2', border:'#FCA5A5'},
+  {color:'#0891B2', bg:'#CFFAFE', border:'#67E8F9'},
+];
+
+function _colorColegio(idx){
+  return _COLORES_COLEGIO[idx % _COLORES_COLEGIO.length];
+}
+
+// ── Carga colegios desde IndexedDB (store "colegios") ──
+async function _cargarColegiosDB(){
+  if(!dbAdmin) await openAdminDB();
+  try{
+    return await iallA('colegios') || [];
+  }catch(e){
+    return [];
+  }
+}
+
+// ── Guarda un colegio nuevo en IndexedDB ──
+async function _guardarColegioDB(colegio){
+  if(!dbAdmin) await openAdminDB();
+  await iputA('colegios', colegio);
+}
+
+// ── Borra un colegio ──
+async function _eliminarColegioDB(id){
+  if(!dbAdmin) await openAdminDB();
+  await idelA('colegios', id);
+}
+
+// ── Renderiza las tarjetas de login ──
+async function renderLoginCards(){
+  const container = document.getElementById('login-cards');
+  if(!container) return;
+  container.innerHTML = '';
+
+  // Tarjeta Admin
+  const adminBtn = document.createElement('button');
+  adminBtn.style.cssText = 'display:flex;align-items:center;gap:12px;background:#FDF3DC;border:1.5px solid #C9A84C;border-radius:12px;padding:12px 16px;cursor:pointer;width:100%;text-align:left;transition:all .15s';
+  adminBtn.onmouseover = () => adminBtn.style.borderColor = '#8B6914';
+  adminBtn.onmouseout  = () => adminBtn.style.borderColor = '#C9A84C';
+  adminBtn.onclick = () => loginElegir('admin','ADMINISTRADOR','','0000',true);
+  adminBtn.innerHTML = `
+    <div style="width:40px;height:40px;border-radius:50%;background:#C9A84C;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">👑</div>
+    <div>
+      <div style="font-size:14px;font-weight:700;color:#8B6914">Administrador</div>
+      <div style="font-size:11px;color:#BA7517">Acceso total al sistema</div>
+    </div>
+    <div style="margin-left:auto;color:#C9A84C;font-size:20px">›</div>`;
+  container.appendChild(adminBtn);
+
+  // Colegios desde DB
+  const colegios = await _cargarColegiosDB();
+  colegios.forEach((col, idx) => {
+    const pal = _colorColegio(idx);
+    const nivLabels = (col.niveles||[]).map(n =>
+      `<span style="font-size:10px;background:${pal.bg};color:${pal.color};border:1px solid ${pal.border};border-radius:8px;padding:1px 6px;font-weight:700">${n}</span>`
+    ).join('');
+    const btn = document.createElement('button');
+    btn.style.cssText = `display:flex;align-items:center;gap:12px;background:${pal.bg};border:1.5px solid ${pal.border};border-radius:12px;padding:12px 16px;cursor:pointer;width:100%;text-align:left;transition:all .15s`;
+    btn.onmouseover = () => btn.style.borderColor = pal.color;
+    btn.onmouseout  = () => btn.style.borderColor = pal.border;
+    if((col.niveles||[]).length > 1){
+      btn.onclick = () => _loginMostrarNiveles(col, pal);
+    } else if((col.niveles||[]).length === 1){
+      const n = col.niveles[0];
+      btn.onclick = () => loginElegir(col.usuario+' '+n, col.usuario, n, col.pwd, false);
+    } else {
+      btn.onclick = () => loginElegir(col.usuario, col.usuario, '', col.pwd, false);
+    }
+    btn.innerHTML = `
+      <div style="width:40px;height:40px;border-radius:50%;background:${pal.color};display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🏫</div>
+      <div style="flex:1">
+        <div style="font-size:14px;font-weight:700;color:${pal.color}">${col.nombre}</div>
+        <div style="display:flex;gap:4px;margin-top:4px;flex-wrap:wrap">${nivLabels}</div>
+      </div>
+      <div style="margin-left:auto;color:${pal.color};font-size:20px">›</div>`;
+    container.appendChild(btn);
+  });
+
+  // Separador + botón nuevo colegio (solo visible para admin logueado o en pantalla login)
+  const sep = document.createElement('div');
+  sep.style.cssText = 'border-top:1px solid #eee;margin-top:6px;padding-top:8px';
+  const nuevoBtn = document.createElement('button');
+  nuevoBtn.style.cssText = 'width:100%;padding:8px;background:none;border:1px dashed #DDE0E4;border-radius:8px;color:#aaa;font-size:12px;cursor:pointer;font-family:Nunito,sans-serif;transition:all .15s';
+  nuevoBtn.textContent = '＋  Nuevo Colegio (solo administrador)';
+  nuevoBtn.onmouseover = () => { nuevoBtn.style.borderColor='#8B6914'; nuevoBtn.style.color='#8B6914'; };
+  nuevoBtn.onmouseout  = () => { nuevoBtn.style.borderColor='#DDE0E4'; nuevoBtn.style.color='#aaa'; };
+  nuevoBtn.onclick = () => abrirModalNuevoColegio();
+  sep.appendChild(nuevoBtn);
+  container.appendChild(sep);
+}
+
+// ── Selector de nivel dentro del login ──
+function _loginMostrarNiveles(col, pal){
+  const container = document.getElementById('login-cards');
+  container.innerHTML = '';
+  const back = document.createElement('button');
+  back.style.cssText = 'width:100%;padding:8px;background:none;border:1px solid #DDE0E4;border-radius:8px;color:#888;font-size:12px;cursor:pointer;margin-bottom:8px;font-family:Nunito,sans-serif';
+  back.textContent = '← Volver';
+  back.onclick = () => renderLoginCards();
+  container.appendChild(back);
+  const title = document.createElement('div');
+  title.style.cssText = `font-size:13px;font-weight:700;color:${pal.color};margin-bottom:8px;padding:0 4px`;
+  title.textContent = '🏫 ' + col.nombre + ' — Selecciona nivel';
+  container.appendChild(title);
+  (col.niveles||[]).forEach(n => {
+    const btn = document.createElement('button');
+    btn.style.cssText = `display:flex;align-items:center;gap:12px;background:${pal.bg};border:1.5px solid ${pal.border};border-radius:10px;padding:10px 16px;cursor:pointer;width:100%;text-align:left;margin-bottom:6px`;
+    btn.onclick = () => loginElegir(col.usuario+' '+n, col.usuario, n, col.pwd, false);
+    btn.innerHTML = `<div style="font-size:14px;font-weight:700;color:${pal.color}">${n}</div><div style="margin-left:auto;color:${pal.color};font-size:18px">›</div>`;
+    container.appendChild(btn);
+  });
+}
+
+// ── Modal crear nuevo colegio ──
+function abrirModalNuevoColegio(){
+  // Solo admin puede crear colegios
+  if(!_usuarioActual || !_usuarioActual.esAdmin){
+    // En la pantalla de login, pedir contraseña admin
+    _loginModalNuevoColegio();
+    return;
+  }
+  _abrirFormNuevoColegio();
+}
+
+function _loginModalNuevoColegio(){
+  // Pequeño diálogo de autenticación admin dentro del login
+  const wrap = document.getElementById('login-pwd-wrap');
+  const cards = document.getElementById('login-cards');
+  const quien = document.getElementById('login-quien');
+  const nivelWrap = document.getElementById('login-nivel-wrap');
+  const btnE = document.getElementById('login-btn-entrar');
+  if(cards) cards.style.display='none';
+  if(nivelWrap) nivelWrap.style.display='none';
+  if(wrap) wrap.style.display='block';
+  if(btnE) btnE.style.display='none';
+  if(quien) quien.innerHTML='<span>🔐 Ingresa clave admin para crear colegio</span>';
+  // Override del botón entrar
+  const inp = document.getElementById('login-pwd-input');
+  if(inp){ inp.value=''; inp.focus(); }
+  // Crear botón confirmar temporal
+  const oldBtn = document.getElementById('_tmp_admin_confirm');
+  if(oldBtn) oldBtn.remove();
+  const confirmBtn = document.createElement('button');
+  confirmBtn.id = '_tmp_admin_confirm';
+  confirmBtn.style.cssText = 'width:100%;margin-top:8px;padding:10px;background:#8B6914;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:Rajdhani,sans-serif';
+  confirmBtn.textContent = '→ CONTINUAR';
+  confirmBtn.onclick = async () => {
+    const pwd = inp ? inp.value.trim() : '';
+    // Verificar pwd admin en IndexedDB
+    if(!dbAdmin) await openAdminDB();
+    const admUsr = await getUsuarioPorNombre('admin');
+    const pwdOk = admUsr ? (admUsr.password === pwd) : (pwd === '0000');
+    if(!pwdOk){
+      document.getElementById('login-msg').textContent = '⚠ Contraseña admin incorrecta';
+      return;
+    }
+    confirmBtn.remove();
+    if(wrap) wrap.style.display='none';
+    if(cards) cards.style.display='flex';
+    document.getElementById('login-msg').textContent='';
+    _abrirFormNuevoColegio();
+  };
+  if(wrap) wrap.appendChild(confirmBtn);
+}
+
+async function _abrirFormNuevoColegio(){
+  // Mostrar modal
+  document.getElementById('login-msg') && (document.getElementById('login-msg').textContent='');
+  openM('mformcolegio');
+  // Limpiar form
+  ['fc-nombre','fc-pwd','fc-pwd2'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.value='';
+  });
+  document.getElementById('fc-msg') && (document.getElementById('fc-msg').textContent='');
+  // Cargar lista de colegios existentes
+  await _renderListaColegiosAdmin();
+}
+
+async function _renderListaColegiosAdmin(){
+  const lista = document.getElementById('fc-lista');
+  if(!lista) return;
+  const colegios = await _cargarColegiosDB();
+  if(!colegios.length){
+    lista.innerHTML = '<div style="color:#aaa;font-size:12px;padding:8px">No hay colegios creados aún.</div>';
+    return;
+  }
+  lista.innerHTML = '';
+  colegios.forEach((col, idx) => {
+    const pal = _colorColegio(idx);
+    const row = document.createElement('div');
+    row.style.cssText = `display:flex;align-items:center;gap:10px;padding:8px 10px;background:${pal.bg};border-radius:8px;margin-bottom:6px;border:1px solid ${pal.border}`;
+    row.innerHTML = `
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:700;color:${pal.color}">${col.nombre}</div>
+        <div style="font-size:11px;color:#666">${(col.niveles||[]).join(' · ')}</div>
+      </div>
+      <button onclick="_eliminarColegioConfirm(${col.id},'${col.nombre}')"
+        style="padding:4px 10px;background:#FEE2E2;color:#B91C1C;border:1px solid #FCA5A5;border-radius:6px;font-size:11px;cursor:pointer">✕ Eliminar</button>`;
+    lista.appendChild(row);
+  });
+}
+
+async function guardarNuevoColegio(){
+  const nombre = (document.getElementById('fc-nombre').value||'').trim().toUpperCase();
+  const pwd    = (document.getElementById('fc-pwd').value||'').trim();
+  const pwd2   = (document.getElementById('fc-pwd2').value||'').trim();
+  const msg    = document.getElementById('fc-msg');
+  const ERR = t => { msg.style.color='#C0392B'; msg.textContent=t; };
+  const OK  = t => { msg.style.color='#1A6B3A'; msg.textContent=t; };
+  if(!nombre){ ERR('⚠ El nombre del colegio es requerido'); return; }
+  if(pwd.length < 4){ ERR('⚠ Mínimo 4 caracteres en contraseña'); return; }
+  if(pwd !== pwd2){ ERR('⚠ Las contraseñas no coinciden'); return; }
+  // Verificar duplicado
+  const colegios = await _cargarColegiosDB();
+  if(colegios.find(c => c.nombre === nombre)){ ERR(`⚠ Ya existe «${nombre}»`); return; }
+  // Crear usuarios para los 3 niveles
+  const niveles = ['PRE BASICA', 'BASICA', 'MEDIA'];
+  const usuariosCreados = [];
+  for(const niv of niveles){
+    const uName = nombre + ' ' + niv;
+    const existe = await getUsuarioPorNombre(uName);
+    if(!existe){
+      const uid = await crearUsuario({
+        usuario: uName, password: pwd,
+        nombre_colegio: nombre + ' ' + niv,
+        colegio_grupo: nombre, nivel: niv,
+        esAdmin: false, creado: new Date().toISOString(),
+      });
+      usuariosCreados.push(uid);
+    }
+  }
+  // Guardar colegio
+  await _guardarColegioDB({
+    nombre, pwd,
+    usuario: nombre,
+    niveles,
+    creadoEn: new Date().toISOString(),
+  });
+  OK(`✓ Colegio «${nombre}» creado con 3 niveles`);
+  await _renderListaColegiosAdmin();
+  // Recargar tarjetas del login
+  await renderLoginCards();
+  setTimeout(() => {
+    document.getElementById('fc-nombre').value = '';
+    document.getElementById('fc-pwd').value    = '';
+    document.getElementById('fc-pwd2').value   = '';
+    msg.textContent = '';
+  }, 1800);
+}
+
+async function _eliminarColegioConfirm(id, nombre){
+  const ok = await confirm2('Eliminar colegio',
+    `¿Eliminar el colegio «${nombre}»?\n\nLos usuarios y bases de datos NO se borran, solo se quita del login.`,
+    'Eliminar');
+  if(!ok) return;
+  await _eliminarColegioDB(id);
+  await _renderListaColegiosAdmin();
+  await renderLoginCards();
+  toast(`✓ Colegio «${nombre}» eliminado del login`, 's');
+}
+
 function loginElegirGrupo(){
   document.getElementById('login-cards').style.display='none';
   document.getElementById('login-nivel-wrap').style.display='block';
@@ -4136,6 +4612,8 @@ async function loginEntrar(){
     _actualizarSelectorNivel();
     const btnGU=document.getElementById('btn-gest-usuarios');
     if(btnGU) btnGU.style.display=_loginUsuarioActual.esAdmin?'flex':'none';
+    const btnGC=document.getElementById('btn-gest-colegios');
+    if(btnGC) btnGC.style.display=_loginUsuarioActual.esAdmin?'flex':'none';
     const tabBtn=document.getElementById('tab-usuarios-btn');
     if(tabBtn) tabBtn.style.display=_loginUsuarioActual.esAdmin?'flex':'none';
     toast('✓ Bienvenido — '+(_loginUsuarioActual.nivel||_loginUsuarioActual.grupo),'s');
@@ -4231,6 +4709,8 @@ async function init(){
   await openAdminDB();
   await asegurarAdminMaestro();
   await _crearColegioEjemplo();
+  // Renderizar tarjetas de colegios dinámicas en el login
+  try { await renderLoginCards(); } catch(e){ console.warn('renderLoginCards:', e); }
   // El nuevo login no necesita cargar usuarios dinamicamente
   setInterval(()=>{ if(_usuarioActual&&_agPendiente)autoguardarSilencioso(); },5*60*1000);
   window.addEventListener('beforeunload',()=>{ if(_usuarioActual&&_agPendiente)autoguardarSilencioso(); });
