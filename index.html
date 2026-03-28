@@ -398,7 +398,7 @@ textarea.fi{resize:none;min-height:75px}
     <button onclick="iniciarSistema()" style="width:100%;background:#8B6914;color:#fff;border:none;border-radius:10px;padding:15px;font-size:15px;font-weight:700;cursor:pointer;font-family:'Rajdhani',sans-serif;letter-spacing:.5px">
       → COMENZAR A USAR CNM
     </button>
-    <div style="text-align:center;font-size:10px;color:#aaa;margin-top:12px">CNM Software v60 · Esta pantalla solo aparece una vez</div>
+    <div style="text-align:center;font-size:10px;color:#aaa;margin-top:12px">CNM Software v70 · Esta pantalla solo aparece una vez</div>
   </div>
 </div>
 
@@ -410,7 +410,7 @@ textarea.fi{resize:none;min-height:75px}
       <!-- Logo -->
       <div style="text-align:center;margin-bottom:28px">
         <div style="font-size:26px;font-weight:900;color:#8B6914;font-family:Rajdhani,sans-serif;letter-spacing:1px">CNM SOFTWARE</div>
-        <div style="font-size:12px;color:#aaa;margin-top:2px">Sistema Escolar v60</div>
+        <div style="font-size:12px;color:#aaa;margin-top:2px">Sistema Escolar v70</div>
       </div>
 
       <!-- Tarjetas de acceso — generadas dinámicamente por renderLoginCards() -->
@@ -452,7 +452,7 @@ textarea.fi{resize:none;min-height:75px}
         🔄 Actualizar app
       </button>
 
-      <div style="text-align:center;font-size:10px;color:#ddd;margin-top:14px">CNM Software © 2025 · v60</div>
+      <div style="text-align:center;font-size:10px;color:#ddd;margin-top:14px">CNM Software © 2025 · v70</div>
     </div>
   </div>
 </div>
@@ -564,7 +564,7 @@ textarea.fi{resize:none;min-height:75px}
         <span id="sbinst">ESCUELA MARIO BAEZA · Las Naciones 823, Maipú</span>
         <span id="sb-guard" style="display:flex;align-items:center;gap:5px;font-size:10px;color:#888">
           <span id="sb-dot" style="width:7px;height:7px;border-radius:50%;background:#888;display:inline-block;transition:background .4s"></span>
-          <span id="sb-txt">CNM v60</span>
+          <span id="sb-txt">CNM v70</span>
         </span>
       </div>
     </div>
@@ -4277,27 +4277,72 @@ function _actualizarSelectorNivel(){
 
 async function cambiarNivel(usr){
   if(!usr) return;
+
+  // 1. Guardar la base ACTUAL antes de cambiar de nivel
+  if(_usuarioActual && db){
+    try{
+      const todosPrev = await iall('alumnos');
+      const cfgPrev   = await iall('cfg');
+      const sinFoto   = todosPrev.map(a=>({...a, foto:''}));
+      const keyPrev   = 'cnm_autoguardado_'+(_usuarioActual.dbName||'default');
+      localStorage.setItem(keyPrev, JSON.stringify({version:1, ts:new Date().toISOString(), alumnos:sinFoto, config:cfgPrev}));
+      localStorage.setItem(keyPrev+'_ts', new Date().toISOString());
+      _agPendiente = false;
+      clearTimeout(_agTimer);
+    }catch(eSave){
+      console.warn('Guardar antes de cambiar nivel:', eSave);
+    }
+  }
+
+  // 2. Cambiar a la nueva base de datos
   try{
-    // Cambiar base de datos sin cerrar sesión
     const dbUsr = await getUsuarioPorNombre(usr.usuario);
-    if(!dbUsr) return;
-    _usuarioActual.id           = dbUsr.id;
-    _usuarioActual.usuario      = dbUsr.usuario;
+    if(!dbUsr){ toast('⚠ No se encontró el usuario de nivel','e'); return; }
+    _usuarioActual.id             = dbUsr.id;
+    _usuarioActual.usuario        = dbUsr.usuario;
     _usuarioActual.nombre_colegio = dbUsr.nombre_colegio||'';
-    _usuarioActual.nivel        = dbUsr.nivel||'';
-    _usuarioActual.dbName       = `${DBN_PREFIX}${dbUsr.id}`;
-    db=null;
-    await openDB(_usuarioActual.dbName);
+    _usuarioActual.nivel          = dbUsr.nivel||'';
+    _usuarioActual.dbName         = `${DBN_PREFIX}${dbUsr.id}`;
+    db = null;
+    // Abrir la nueva BD con timeout de seguridad
+    await Promise.race([
+      openDB(_usuarioActual.dbName),
+      new Promise((_,rej)=>setTimeout(()=>rej(new Error('Timeout al abrir BD')),8000))
+    ]);
     if(_usuarioActual.nombre_colegio){
       const cfgNom=await gcfg('nombre_colegio');
       if(!cfgNom||cfgNom===DCFG.nombre_colegio) await scfg('nombre_colegio',_usuarioActual.nombre_colegio);
     }
+    // Leer base actualizada
+    const nuevos = await iall('alumnos');
+    const totalNuevo = nuevos.filter(a=>!a.deleted).length;
     await refreshUI();
     _actualizarSelectorNivel();
-    toast(`✓ Cambiado a ${dbUsr.nivel||dbUsr.usuario}`,'s');
+    toast(`✓ ${dbUsr.nivel||dbUsr.usuario} — ${totalNuevo} alumnos cargados`,'s');
   }catch(e){
-    toast('⚠ Error al cambiar nivel','e');
     console.error('cambiarNivel:',e);
+    // Si falla la apertura de la nueva BD → cerrar sesión forzada con aviso
+    const nivelNombre = usr.nivel || usr.usuario || 'nuevo nivel';
+    await confirm2(
+      '⚠ Error al cambiar de nivel',
+      `No se pudo cargar la base de datos de "${nivelNombre}".
+
+Se cerrará la sesión automáticamente para evitar pérdida de datos.
+
+Vuelve a ingresar para reintentar.`,
+      'Entendido'
+    );
+    // Limpiar estado y volver al login
+    clearTimeout(_agTimer);
+    _usuarioActual = null;
+    _loginUsuarioActual = null;
+    db = null;
+    loginVolverCards();
+    document.getElementById('login-pwd-input').value='';
+    document.getElementById('login-msg').textContent='';
+    document.getElementById('login-panel').style.display='flex';
+    closeSB();
+    toast('Sesión cerrada — vuelve a ingresar','e');
   }
 }
 
@@ -4518,17 +4563,42 @@ function actualizarApp(){
 async function cerrarSesion(){
   const ok=await confirm2('🔒 Cerrar sesión','Se guardará un respaldo automático antes de salir.\n¿Continuar?','Cerrar sesión');
   if(!ok)return;
-  if(_usuarioActual&&_agPendiente) await autoguardarSilencioso();
+  // Cancelar timer pendiente para evitar que dispare con db=null
+  clearTimeout(_agTimer);
+  // Guardar SIEMPRE antes de salir — sin fotos para evitar QuotaExceededError
+  let guardadoOk=false;
+  if(_usuarioActual && db){
+    try{
+      const all = await iall('alumnos');
+      const cfg = await iall('cfg');
+      const total = all.filter(a=>!a.deleted).length;
+      const nivel = _usuarioActual.nivel || _usuarioActual.usuario || 'Base';
+      const alumnosSinFoto = all.map(a=>({...a, foto:''}));
+      const _agKey = 'cnm_autoguardado_' + (_usuarioActual.dbName||'default');
+      const ahora  = new Date().toISOString();
+      localStorage.setItem(_agKey, JSON.stringify({version:1, ts:ahora, alumnos:alumnosSinFoto, config:cfg}));
+      localStorage.setItem(_agKey+'_ts', ahora);
+      _agPendiente = false;
+      guardadoOk = true;
+      const hora  = new Date().toLocaleTimeString('es-CL',{hour:'2-digit',minute:'2-digit'});
+      const fecha = new Date().toLocaleDateString('es-CL',{day:'2-digit',month:'2-digit',year:'numeric'});
+      toast(`💾 Base guardada — ${nivel} · ${total} alumnos · ${fecha} ${hora}`,'s');
+    }catch(e){
+      console.warn('Autoguardado al cerrar sesión falló:',e);
+      toast('⚠ No se pudo guardar el respaldo local','e');
+    }
+  }
+  // Pausa para que el toast sea visible antes de cambiar pantalla
+  await new Promise(r=>setTimeout(r, guardadoOk ? 1200 : 400));
   _usuarioActual=null;
   _loginUsuarioActual=null;
   db=null;
-  // Resetear login visual
   loginVolverCards();
   document.getElementById('login-pwd-input').value='';
   document.getElementById('login-msg').textContent='';
   document.getElementById('login-panel').style.display='flex';
   closeSB();
-  toast('✓ Sesión cerrada','s');
+  if(!guardadoOk) toast('✓ Sesión cerrada','s');
 }
 
 // ─── AUTOGUARDADO ─────────────────────────────────
@@ -4548,10 +4618,7 @@ async function autoguardarSilencioso(){
   if(!_agPendiente)return;
   try{
     const all=await iall('alumnos'),cfg=await iall('cfg');
-    // Excluir fotos del autoguardado en localStorage para evitar QuotaExceededError
-    // Las fotos ya están seguras en IndexedDB
-    const alumnosSinFoto=all.map(a=>({...a,foto:''}));
-    const d=JSON.stringify({version:1,ts:ts(),alumnos:alumnosSinFoto,config:cfg});
+    const d=JSON.stringify({version:1,ts:ts(),alumnos:all,config:cfg});
     const _agKey='cnm_autoguardado_'+(_usuarioActual?.dbName||'default');
     localStorage.setItem(_agKey,d);
     localStorage.setItem(_agKey+'_ts',new Date().toISOString());
@@ -4560,7 +4627,7 @@ async function autoguardarSilencioso(){
     const hora=new Date().toLocaleTimeString('es-CL',{hour:'2-digit',minute:'2-digit'});
     const fecha=new Date().toLocaleDateString('es-CL',{day:'2-digit',month:'2-digit',year:'numeric'});
     document.getElementById('sb-txt').textContent='💾 '+fecha+' '+hora;
-    setTimeout(()=>{ document.getElementById('sb-txt').textContent='CNM v60'; _agSetDot('idle'); },8000);
+    setTimeout(()=>{ document.getElementById('sb-txt').textContent='CNM v70'; _agSetDot('idle'); },8000);
   }catch(e){
     _agSetDot('error');
     console.warn('Autoguardado falló:',e);
@@ -4594,11 +4661,9 @@ async function restaurarAutoguardado(){
         if(a.emerg_tel!==undefined && a.emergencia_tel===undefined){
           a.emergencia_tel=a.emerg_tel; delete a.emerg_tel;
         }
-        const ex=await getByUuid(a.uuid);
-        // Preservar foto existente en IndexedDB (autoguardado no incluye fotos para ahorrar espacio)
-        if(!a.foto && ex && ex.foto) a.foto=ex.foto;
         // ── Comprimir foto si viene en alta resolución del PC ──
         if(a.foto && String(a.foto).startsWith('data:')) a.foto = await _comprimirFotoImport(a.foto);
+        const ex=await getByUuid(a.uuid);
         if(ex){ a.id=ex.id; await iput('alumnos',a); upd++; }
         else{ delete a.id; await iput('alumnos',a); ins++; }
       }
@@ -5872,33 +5937,39 @@ function toggleFullscreen(){
 }
 
 async function guardarCambios(){
+  // Deshabilitar botón para evitar doble click
+  const btn = document.querySelector('button[onclick="guardarCambios()"]');
+  if(btn){ btn.disabled=true; btn.textContent='⏳'; }
   try{
-    // Forzar escritura de todos los datos pendientes en IndexedDB
+    if(!_usuarioActual || !db) throw new Error('Sin sesión activa');
     const todos = await iall('alumnos');
-    const cfg = await iall('cfg');
-    const pdfs = await iall('pdfs');
-    // Guardar autoguardado con timestamp actual
-    const d = JSON.stringify({version:1, ts:new Date().toISOString(), alumnos:todos, config:cfg});
-    const _agKey='cnm_autoguardado_'+(_usuarioActual?.dbName||'default');
-    localStorage.setItem(_agKey, d);
-    localStorage.setItem(_agKey+'_ts', new Date().toISOString());
+    const cfg   = await iall('cfg');
+    const total = todos.filter(a=>!a.deleted).length;
+    const nivel = _usuarioActual.nivel || _usuarioActual.usuario || 'Base';
+    // Guardar en localStorage SIN fotos para evitar QuotaExceededError
+    const alumnosSinFoto = todos.map(a=>({...a, foto:''}));
+    const _agKey = 'cnm_autoguardado_' + (_usuarioActual.dbName||'default');
+    const ahora  = new Date().toISOString();
+    localStorage.setItem(_agKey, JSON.stringify({version:1, ts:ahora, alumnos:alumnosSinFoto, config:cfg}));
+    localStorage.setItem(_agKey+'_ts', ahora);
     _agPendiente = false;
+    clearTimeout(_agTimer);
     _agSetDot('ok');
     const hora = new Date().toLocaleTimeString('es-CL',{hour:'2-digit',minute:'2-digit'});
-    document.getElementById('sb-txt').textContent = 'Guardado '+hora;
-    // Confirmacion clara al usuario
-    const fechaHora = new Date().toLocaleDateString('es-CL',{
-      weekday:'long', year:'numeric', month:'long', day:'numeric'
-    }) + ' · ' + hora;
+    const fecha = new Date().toLocaleDateString('es-CL',{weekday:'long', year:'numeric', month:'long', day:'numeric'});
+    document.getElementById('sb-txt').textContent = '💾 '+hora;
+    // Modal de confirmación con detalles del nivel guardado
     await confirm2(
-      '✅ Guardado exitoso',
-      'Los cambios han sido guardados\ncorrectamente en la base de datos.\n\n📅 ' + fechaHora,
+      '✅ Base guardada correctamente',
+      `📚 Nivel: ${nivel}\n👥 Alumnos guardados: ${total}\n📅 ${fecha}\n🕐 ${hora}`,
       'Aceptar'
     );
-    document.getElementById('sb-txt').textContent = '💾 Guardado ' + hora;
-    setTimeout(()=>{ document.getElementById('sb-txt').textContent='CNM v60'; _agSetDot('idle'); }, 5000);
+    setTimeout(()=>{ document.getElementById('sb-txt').textContent='CNM v70'; _agSetDot('idle'); }, 5000);
   }catch(err){
+    console.error('guardarCambios:',err);
     toast('⚠ Error al guardar: '+err.message,'e');
+  }finally{
+    if(btn){ btn.disabled=false; btn.textContent='💾'; }
   }
 }
 
@@ -6075,7 +6146,7 @@ function scrollVisor(delta){
 (function(){
   if(!('serviceWorker' in navigator))return;
   const swCode=`
-const C='cnm-v5';
+const C='cnm-v4';
 self.addEventListener('install',e=>{self.skipWaiting();});
 self.addEventListener('activate',e=>{
   e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==C).map(k=>caches.delete(k)))));
@@ -6083,17 +6154,6 @@ self.addEventListener('activate',e=>{
 });
 self.addEventListener('fetch',e=>{
   const u=e.request.url;
-  // Para la página principal (navigate): siempre ir a red primero, caché como fallback
-  if(e.request.mode==='navigate'){
-    e.respondWith(
-      fetch(e.request).then(r=>{
-        const cl=r.clone();
-        caches.open(C).then(cache=>cache.put(e.request,cl));
-        return r;
-      }).catch(()=>caches.match(e.request))
-    );
-    return;
-  }
   if(u.includes('cdnjs')||u.includes('fonts.g')){
     e.respondWith(caches.match(e.request).then(c=>{
       return c||fetch(e.request).then(r=>{
