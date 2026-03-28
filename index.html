@@ -3033,7 +3033,19 @@ async function onImportZip(e){
       if(!dbDest){ errores++; continue; }
 
       const iputD=(o)=>new Promise(r=>{ const t=dbDest.transaction('alumnos','readwrite'); t.objectStore('alumnos').put(o).onsuccess=e=>r(e.target.result); });
-      const getUuidD=(uuid)=>new Promise(r=>{ const t=dbDest.transaction('alumnos','readonly'); t.objectStore('alumnos').index('uuid').get(uuid).onsuccess=e=>r(e.target.result); });
+      const getUuidD=(uuid)=>new Promise(r=>{
+        try{
+          const t=dbDest.transaction('alumnos','readonly');
+          const store=t.objectStore('alumnos');
+          if(store.indexNames.contains('uuid')){
+            store.index('uuid').get(uuid).onsuccess=e=>r(e.target.result);
+          } else {
+            const req=store.openCursor(); let found=null;
+            req.onsuccess=e=>{ const c=e.target.result; if(!c){r(found);return;} if(c.value&&c.value.uuid===uuid){found=c.value;r(found);}else c.continue(); };
+            req.onerror=()=>r(null);
+          }
+        }catch(e){r(null);}
+      });
 
       let registros=[];
       if(a.tipo==='json' && a.meta.raw){
@@ -3077,6 +3089,8 @@ async function onImportZip(e){
   }
 
   prog.remove();
+  // Reabrir la BD activa para que buscar() refleje los datos recién importados
+  try{ await openDB(_usuarioActual?.dbName); }catch(e){}
   await buscar(); await refreshUI(); agMarcar();
 
   const resumen=`✓ ZIP importado — ${totalIns} nuevos · ${totalUpd} actualizados`+(errores?` · ⚠ ${errores} error(es)`:'');
