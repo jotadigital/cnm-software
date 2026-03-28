@@ -1474,7 +1474,7 @@ let dbAdmin=null;
 function openAdminDB(intento=1){
   return new Promise((res,rej)=>{
     try{
-      const r=indexedDB.open(DBN_ADMIN,1);
+      const r=indexedDB.open(DBN_ADMIN,2);
       r.onupgradeneeded=e=>{
         try{
           const d=e.target.result;
@@ -2622,7 +2622,17 @@ async function convertirJsonADb(){
 // ─── BACKUP / IMPORTAR ────────────────────────────
 async function respaldar(){
   const all=await iall('alumnos'),cfg=await iall('cfg');
-  const d=JSON.stringify({version:1,ts:ts(),alumnos:all,config:cfg});
+  // Inyectar metadatos de nivel/colegio para compatibilidad con app Python
+  const _nivelClaveMapa={'PRE BASICA':'pre_basica','BASICA':'basica','MEDIA':'media'};
+  const _nivelLabelMapa={'PRE BASICA':'PRE-BÁSICA','BASICA':'BÁSICA 1°-8°','MEDIA':'MEDIA 1°-4°'};
+  const _nivAct=_usuarioActual?.nivel||'';
+  const _colAct=_usuarioActual?.colegio_grupo||_usuarioActual?.nombre_colegio||'';
+  const _metaKeys=new Set(cfg.map(c=>c.k||c.clave||''));
+  const _metaExtra=[];
+  if(_nivAct&&!_metaKeys.has('nivel_clave')) _metaExtra.push({k:'nivel_clave',v:_nivelClaveMapa[_nivAct]||_nivAct.toLowerCase().replace(/ /g,'_')});
+  if(_nivAct&&!_metaKeys.has('nivel_label')) _metaExtra.push({k:'nivel_label',v:_nivelLabelMapa[_nivAct]||_nivAct});
+  if(_colAct&&!_metaKeys.has('colegio_nombre')) _metaExtra.push({k:'colegio_nombre',v:_colAct});
+  const d=JSON.stringify({version:1,ts:ts(),alumnos:all,config:[...cfg,..._metaExtra]});
   const b=new Blob([d],{type:'application/json'});
   // base64 Data URI — compatible con WebView Android
   const rdr=new FileReader();
@@ -2644,7 +2654,17 @@ async function respaldarSQLite(){
     const fecha=new Date().toISOString().slice(0,10);
     const hora=new Date().toLocaleTimeString('es-CL',{hour:'2-digit',minute:'2-digit'});
     const total=alumnos.filter(a=>!a.deleted).length;
-    const d=JSON.stringify({version:1,ts:new Date().toISOString(),alumnos,config:cfg});
+    // Inyectar metadatos de nivel/colegio para compatibilidad con app Python
+    const _nivelClaveMapa={'PRE BASICA':'pre_basica','BASICA':'basica','MEDIA':'media'};
+    const _nivelLabelMapa={'PRE BASICA':'PRE-BÁSICA','BASICA':'BÁSICA 1°-8°','MEDIA':'MEDIA 1°-4°'};
+    const _nivAct=_usuarioActual?.nivel||'';
+    const _colAct=_usuarioActual?.colegio_grupo||_usuarioActual?.nombre_colegio||'';
+    const _metaKeys=new Set(cfg.map(c=>c.k||c.clave||''));
+    const _metaExtra=[];
+    if(_nivAct&&!_metaKeys.has('nivel_clave')) _metaExtra.push({k:'nivel_clave',v:_nivelClaveMapa[_nivAct]||_nivAct.toLowerCase().replace(/ /g,'_')});
+    if(_nivAct&&!_metaKeys.has('nivel_label')) _metaExtra.push({k:'nivel_label',v:_nivelLabelMapa[_nivAct]||_nivAct});
+    if(_colAct&&!_metaKeys.has('colegio_nombre')) _metaExtra.push({k:'colegio_nombre',v:_colAct});
+    const d=JSON.stringify({version:1,ts:new Date().toISOString(),alumnos,config:[...cfg,..._metaExtra]});
     const blob=new Blob([d],{type:'application/json'});
 
     // Nombre descriptivo: colegio + nivel + fecha
@@ -4455,42 +4475,51 @@ async function guardarNuevoColegio(){
   if(!nombre){ ERR('⚠ El nombre del colegio es requerido'); return; }
   if(pwd.length < 4){ ERR('⚠ Mínimo 4 caracteres en contraseña'); return; }
   if(pwd !== pwd2){ ERR('⚠ Las contraseñas no coinciden'); return; }
-  // Verificar duplicado
-  const colegios = await _cargarColegiosDB();
-  if(colegios.find(c => c.nombre === nombre)){ ERR(`⚠ Ya existe «${nombre}»`); return; }
-  // Crear usuarios para los 3 niveles
-  const niveles = ['PRE BASICA', 'BASICA', 'MEDIA'];
-  const usuariosCreados = [];
-  for(const niv of niveles){
-    const uName = nombre + ' ' + niv;
-    const existe = await getUsuarioPorNombre(uName);
-    if(!existe){
-      const uid = await crearUsuario({
-        usuario: uName, password: pwd,
-        nombre_colegio: nombre + ' ' + niv,
-        colegio_grupo: nombre, nivel: niv,
-        esAdmin: false, creado: new Date().toISOString(),
-      });
-      usuariosCreados.push(uid);
+  try{
+    // Verificar duplicado
+    const colegios = await _cargarColegiosDB();
+    if(colegios.find(c => c.nombre === nombre)){ ERR(`⚠ Ya existe «${nombre}»`); return; }
+    // Crear usuarios para los 3 niveles
+    const niveles = ['PRE BASICA', 'BASICA', 'MEDIA'];
+    const nivelesClaves = ['pre_basica', 'basica', 'media'];
+    const usuariosCreados = [];
+    for(let i=0;i<niveles.length;i++){
+      const niv = niveles[i];
+      const nivClave = nivelesClaves[i];
+      const uName = nombre + ' ' + niv;
+      const existe = await getUsuarioPorNombre(uName);
+      if(!existe){
+        const uid = await crearUsuario({
+          usuario: uName, password: pwd,
+          nombre_colegio: nombre + ' ' + niv,
+          colegio_grupo: nombre, nivel: niv,
+          nivel_clave: nivClave,
+          esAdmin: false, creado: new Date().toISOString(),
+        });
+        usuariosCreados.push(uid);
+      }
     }
+    // Guardar colegio
+    await _guardarColegioDB({
+      nombre, pwd,
+      usuario: nombre,
+      niveles,
+      creadoEn: new Date().toISOString(),
+    });
+    OK(`✓ Colegio «${nombre}» creado con 3 niveles`);
+    await _renderListaColegiosAdmin();
+    // Recargar tarjetas del login
+    await renderLoginCards();
+    setTimeout(() => {
+      document.getElementById('fc-nombre').value = '';
+      document.getElementById('fc-pwd').value    = '';
+      document.getElementById('fc-pwd2').value   = '';
+      msg.textContent = '';
+    }, 1800);
+  }catch(e){
+    ERR('⚠ Error al crear el colegio: '+(e.message||e));
+    console.error('guardarNuevoColegio error:',e);
   }
-  // Guardar colegio
-  await _guardarColegioDB({
-    nombre, pwd,
-    usuario: nombre,
-    niveles,
-    creadoEn: new Date().toISOString(),
-  });
-  OK(`✓ Colegio «${nombre}» creado con 3 niveles`);
-  await _renderListaColegiosAdmin();
-  // Recargar tarjetas del login
-  await renderLoginCards();
-  setTimeout(() => {
-    document.getElementById('fc-nombre').value = '';
-    document.getElementById('fc-pwd').value    = '';
-    document.getElementById('fc-pwd2').value   = '';
-    msg.textContent = '';
-  }, 1800);
 }
 
 async function _eliminarColegioConfirm(id, nombre){
