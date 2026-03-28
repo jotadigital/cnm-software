@@ -495,7 +495,8 @@ textarea.fi{resize:none;min-height:75px}
       <button class="nb" onclick="openMisPdfs();closeSB()" style="color:var(--gold)"><span class="ni">📂</span>Mis PDFs</button>
       <div class="nl">GESTIÓN</div>
       <button class="nb" onclick="openM('mcursos');closeSB()"><span class="ni">⇄</span>Adm. Cursos</button>
-      <button class="nb" onclick="importar();closeSB()"><span class="ni">📥</span>Importar BD</button>
+      <button class="nb" onclick="importarZip();closeSB()" style="color:#1A6B3A;font-weight:800"><span class="ni">📦</span>Importar ZIP</button>
+      <button class="nb" onclick="importar();closeSB()"><span class="ni">📥</span>Importar BD (manual)</button>
       <button class="nb" onclick="respaldarSQLite();closeSB()" style="color:var(--green)"><span class="ni">💾</span>Exportar BD</button>
       <button class="nb" onclick="openM('mconvertir');closeSB()" style="color:var(--blue)"><span class="ni">🔄</span>Convertir BD</button>
       <button class="nb" onclick="openSyncWifi();closeSB()" style="color:#2ecc71"><span class="ni">↕</span>Sync WiFi PC</button>
@@ -1441,6 +1442,7 @@ textarea.fi{resize:none;min-height:75px}
 </div>
 
 <input type="file" id="importInput" accept=".db,.json" style="position:fixed;top:-100px;left:-100px;opacity:0;width:1px;height:1px" onchange="onImportFile(event)">
+<input type="file" id="importZipInput" accept=".zip" style="position:fixed;top:-100px;left:-100px;opacity:0;width:1px;height:1px" onchange="onImportZip(event)">
 <input type="file" id="logoInputFijo" accept="image/*" style="position:fixed;top:-100px;left:-100px;opacity:0;width:1px;height:1px" onchange="onLogo(event)">
 
 <div id="toast"></div>
@@ -1840,6 +1842,25 @@ async function openForm(id){
 const FOTO_MIN_KB = 200;
 const FOTO_MAX_KB = 300;
 const FOTO_NTFY_MAX_KB = 276; // límite ntfy menos 2 KB de datos
+
+// Comprime foto proveniente de importación (PC puede traer alta resolución)
+// Si ya está dentro del límite, la deja igual para no re-comprimir innecesariamente
+function _comprimirFotoImport(b64){
+  return new Promise(resolve=>{
+    if(!b64||!b64.startsWith('data:')){ resolve(b64||''); return; }
+    const kbActual=Math.round(b64.length*0.75/1024);
+    if(kbActual<=FOTO_MAX_KB){ resolve(b64); return; } // ya está bien — no tocar
+    const img=new Image();
+    img.onerror=()=>resolve(b64); // si falla, guardar original
+    img.onload=()=>{
+      try{
+        const opt=_encontrarResolucionOptima(img);
+        resolve(opt.b64);
+      }catch(e){ resolve(b64); }
+    };
+    img.src=b64;
+  });
+}
 
 function _comprimirImagen(imgEl, maxPx, calidad){
   let w=imgEl.width, h=imgEl.height;
@@ -2752,6 +2773,318 @@ async function exportarPorApp(tipo){
     }catch(e){ if(e.name!=='AbortError') toast('⚠ Error al compartir: '+e.message,'e'); }
   }
 }
+// ══════════════════════════════════════════════════
+// ── IMPORTAR ZIP — múltiples bases automáticamente ──
+// ══════════════════════════════════════════════════
+
+async function _cargarJSZip(){
+  if(window.JSZip) return true;
+  try{
+    await new Promise((res,rej)=>{
+      const s=document.createElement('script');
+      s.src='https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
+      s.onload=res; s.onerror=rej;
+      document.head.appendChild(s);
+    });
+    return true;
+  }catch(e){ toast('⚠ Sin internet para cargar lector ZIP','e'); return false; }
+}
+
+// Detecta nivel desde metadatos internos de un archivo .json
+async function _detectarNivelJSON(file){
+  try{
+    const data=JSON.parse(await file.text());
+    if(!data.alumnos) return null;
+    const cfg=data.config||[];
+    let nivelClave='', nivelLabel='', colegio='';
+    for(const c of cfg){
+      const k=c.clave||c.k||'';
+      const v=c.valor!==undefined?c.valor:(c.v!==undefined?c.v:'');
+      if(k==='nivel_clave')  nivelClave=v||'';
+      if(k==='nivel_label')  nivelLabel=v||'';
+      if(k==='colegio_nombre'||k==='nombre_colegio') colegio=colegio||v||'';
+    }
+    // También leer nivel del campo raíz si existe (autoguardados)
+    if(!nivelClave && data.nivel) nivelClave=data.nivel.toLowerCase().replace(/ /g,'_');
+    const nivelMapeo={'pre_basica':'PRE BASICA','basica':'BASICA','media':'MEDIA'};
+    const nivelMovil = nivelMapeo[nivelClave]
+      || nivelLabel.replace(/[°º\d\-–]/g,'').trim().toUpperCase()
+      || '';
+    return { nivelMovil, nivelClave, nivelLabel, colegio, total: data.alumnos.length, raw: data };
+  }catch(e){ return null; }
+}
+
+// Detecta nivel desde metadatos internos de un archivo .db (necesita sql.js)
+async function _detectarNivelDB(arrayBuf, SQL){
+  try{
+    const sdb=new SQL.Database(new Uint8Array(arrayBuf));
+    const tables=sdb.exec("SELECT name FROM sqlite_master WHERE type='table'");
+    const names=(tables[0]?.values||[]).flat();
+    if(!names.includes('alumnos')){ sdb.close(); return null; }
+    let nivelClave='', nivelLabel='', colegio='';
+    if(names.includes('config_colegio')){
+      const cr=sdb.exec("SELECT clave,valor FROM config_colegio");
+      if(cr.length){
+        for(const[k,v] of cr[0].values){
+          if(k==='nivel_clave')  nivelClave=v||'';
+          if(k==='nivel_label')  nivelLabel=v||'';
+          if(k==='nombre_colegio'||k==='colegio_nombre') colegio=colegio||v||'';
+        }
+      }
+    }
+    const cntRes=sdb.exec("SELECT COUNT(*) FROM alumnos WHERE deleted=0 OR deleted IS NULL");
+    const total=(cntRes[0]?.values[0][0])||0;
+    sdb.close();
+    const nivelMapeo={'pre_basica':'PRE BASICA','basica':'BASICA','media':'MEDIA'};
+    const nivelMovil = nivelMapeo[nivelClave]
+      || nivelLabel.replace(/[°º\d\-–]/g,'').trim().toUpperCase()
+      || '';
+    return { nivelMovil, nivelClave, nivelLabel, colegio, total, arrayBuf };
+  }catch(e){ return null; }
+}
+
+// Intenta detectar nivel desde el nombre del archivo como último recurso
+function _detectarNivelPorNombre(nombre){
+  const n=nombre.toUpperCase();
+  if(n.includes('PRE_BASICA')||n.includes('PRE BASICA')||n.includes('PREBASICA')) return 'PRE BASICA';
+  if(n.includes('BASICA')||n.includes('BÁSICA')) return 'BASICA';
+  if(n.includes('MEDIA')) return 'MEDIA';
+  return '';
+}
+
+function importarZip(){
+  const inp=document.getElementById('importZipInput');
+  inp.value=''; inp.click();
+}
+
+async function onImportZip(e){
+  const file=e.target.files[0]; if(!file) return;
+
+  toast('📦 Leyendo ZIP…','i');
+
+  // 1. Cargar JSZip
+  const zipOk=await _cargarJSZip();
+  if(!zipOk) return;
+
+  // 2. Cargar sql.js (para archivos .db dentro del zip)
+  if(!window.initSqlJs){
+    try{
+      await new Promise((res,rej)=>{
+        const s=document.createElement('script');
+        s.src='https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.2/sql-wasm.js';
+        s.onload=res; s.onerror=rej; document.head.appendChild(s);
+      });
+    }catch(e){ /* sql.js opcional — solo afecta .db */ }
+  }
+  let SQL=null;
+  if(window.initSqlJs){
+    try{ SQL=await initSqlJs({locateFile:f=>`https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.2/${f}`}); }catch(e){}
+  }
+
+  // 3. Abrir ZIP
+  let zip;
+  try{ zip=await JSZip.loadAsync(await file.arrayBuffer()); }
+  catch(e){ toast('⚠ No se pudo leer el archivo ZIP','e'); return; }
+
+  // 4. Reunir archivos .db y .json del ZIP (ignora carpetas y archivos no relevantes)
+  const archivos=[];
+  zip.forEach((ruta,entry)=>{
+    if(entry.dir) return;
+    const nom=ruta.split('/').pop().toLowerCase();
+    if(nom.startsWith('.') || nom.startsWith('__')) return;
+    if(nom.endsWith('.db') || nom.endsWith('.json')) archivos.push({ruta, entry, nom});
+  });
+
+  if(!archivos.length){
+    toast('⚠ El ZIP no contiene archivos .db ni .json','e'); return;
+  }
+
+  // 5. Analizar cada archivo y detectar su nivel
+  const todosUsr=await iallA('usuarios');
+  const usrsConNivel=todosUsr.filter(u=>!u.esAdmin && u.nivel);
+  const nivelOrd={'PRE BASICA':1,'BASICA':2,'MEDIA':3};
+  usrsConNivel.sort((a,b)=>(nivelOrd[a.nivel]||9)-(nivelOrd[b.nivel]||9));
+
+  const analizados=[];
+  for(const {ruta, entry, nom} of archivos){
+    let meta=null;
+    if(nom.endsWith('.json')){
+      const txt=await entry.async('text');
+      const f=new File([txt], nom, {type:'application/json'});
+      meta=await _detectarNivelJSON(f);
+    } else if(nom.endsWith('.db') && SQL){
+      const buf=await entry.async('arraybuffer');
+      meta=await _detectarNivelDB(buf, SQL);
+      if(meta) meta.arrayBuf=buf;
+    } else if(nom.endsWith('.db') && !SQL){
+      // sin sql.js — guardar buffer y marcar como sin analizar
+      const buf=await entry.async('arraybuffer');
+      meta={ nivelMovil:'', nivelClave:'', nivelLabel:'', colegio:'', total:'?', arrayBuf:buf };
+    }
+    if(!meta) meta={ nivelMovil:'', nivelClave:'', nivelLabel:'', colegio:'', total:'?', raw:null, arrayBuf:null };
+
+    // Fallback: detectar por nombre de archivo
+    if(!meta.nivelMovil) meta.nivelMovil=_detectarNivelPorNombre(nom);
+
+    // Buscar usuario destino que coincida
+    let usrDestino=null;
+    if(meta.nivelMovil){
+      usrDestino = usrsConNivel.find(u=>(u.nivel||'').toUpperCase()===meta.nivelMovil);
+      if(!usrDestino) usrDestino = _usuarioActual; // fallback: nivel activo
+    } else {
+      usrDestino = _usuarioActual;
+    }
+
+    analizados.push({ nom: ruta.split('/').pop(), tipo: nom.endsWith('.db')?'db':'json', meta, usrDestino });
+  }
+
+  // 6. Mostrar modal de confirmación con tabla de asignaciones
+  const colNivel={'PRE BASICA':'#E8F0FE|#1F6FEB','BASICA':'#E6F4EC|#1A6B3A','MEDIA':'#FAEEDA|#8B6914'};
+
+  const filas=analizados.map((a,i)=>{
+    const nivel=a.usrDestino?.nivel||'—';
+    const [bg,col]=(colNivel[nivel]||'#F1EFE8|#5F5E5A').split('|');
+    const nivOpts=usrsConNivel.map((u,j)=>`<option value="${j}" ${u.id===a.usrDestino?.id?'selected':''}>${u.nivel}</option>`).join('');
+    return `<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #F0F0F0">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:12px;font-weight:700;color:#111;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${a.nom}">${a.nom}</div>
+        <div style="font-size:11px;color:#888">${a.tipo.toUpperCase()} · ${a.meta.total} alumnos${a.meta.colegio?' · '+a.meta.colegio:''}</div>
+      </div>
+      <select data-idx="${i}" style="font-size:12px;font-weight:700;padding:4px 6px;border-radius:6px;border:1.5px solid ${col};background:${bg};color:${col};font-family:Rajdhani,sans-serif;cursor:pointer">
+        ${nivOpts}
+        <option value="-1" ${!a.usrDestino?'selected':''}>— Sin asignar</option>
+      </select>
+    </div>`;
+  }).join('');
+
+  const overlay=document.createElement('div');
+  overlay.id='zip-import-modal';
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:10002;display:flex;align-items:center;justify-content:center;padding:16px';
+  overlay.innerHTML=`
+    <div style="background:var(--color-background-primary);border-radius:16px;padding:20px;width:100%;max-width:400px;max-height:88vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.2)">
+      <div style="font-size:15px;font-weight:800;color:var(--color-text-primary);margin-bottom:4px;font-family:Rajdhani,sans-serif">📦 Importar ZIP — ${analizados.length} base${analizados.length!==1?'s':''}</div>
+      <div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:4px">Revisa y ajusta la asignación de nivel si es necesario</div>
+      <div style="font-size:11px;color:#1A6B3A;background:#E6F4EC;border-radius:6px;padding:6px 10px;margin-bottom:14px">✓ Los datos se fusionan — no se borra nada existente</div>
+      <div id="zip-filas">${filas}</div>
+      <div style="display:flex;gap:8px;margin-top:14px">
+        <button id="zip-cancel-btn" style="flex:1;padding:11px;background:none;border:1px solid var(--color-border-secondary);border-radius:8px;cursor:pointer;font-size:13px;color:var(--color-text-secondary);font-family:Rajdhani,sans-serif">Cancelar</button>
+        <button id="zip-ok-btn" style="flex:2;padding:11px;background:#1A6B3A;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:800;font-family:Rajdhani,sans-serif">⬇ Importar todo</button>
+      </div>
+      <div id="zip-progress" style="display:none;margin-top:10px;font-size:12px;color:var(--color-text-secondary);text-align:center"></div>
+    </div>`;
+
+  window._zipModalResult=null;
+  document.body.appendChild(overlay);
+
+  // Actualizar asignación cuando el usuario cambia un select
+  overlay.querySelectorAll('select[data-idx]').forEach(sel=>{
+    sel.addEventListener('change',()=>{
+      const idx=parseInt(sel.dataset.idx);
+      const j=parseInt(sel.value);
+      analizados[idx].usrDestino = j>=0 ? usrsConNivel[j] : null;
+      // Actualizar color del select
+      const nivel=analizados[idx].usrDestino?.nivel||'';
+      const [bg,col]=(colNivel[nivel]||'#F1EFE8|#5F5E5A').split('|');
+      sel.style.background=bg; sel.style.color=col; sel.style.borderColor=col;
+    });
+  });
+
+  await new Promise(res=>{
+    document.getElementById('zip-ok-btn').addEventListener('click',()=>{ window._zipModalResult='ok'; res(); });
+    document.getElementById('zip-cancel-btn').addEventListener('click',()=>{ window._zipModalResult='cancel'; res(); });
+  });
+  overlay.remove();
+  if(window._zipModalResult!=='ok') return;
+
+  // 7. Importar cada archivo a su BD destino
+  const prog=document.createElement('div');
+  prog.style.cssText='position:fixed;bottom:70px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.82);color:#fff;border-radius:10px;padding:10px 18px;font-size:13px;font-weight:700;z-index:9999;font-family:Rajdhani,sans-serif;white-space:nowrap';
+  document.body.appendChild(prog);
+
+  let totalIns=0, totalUpd=0, errores=0;
+  for(let i=0;i<analizados.length;i++){
+    const a=analizados[i];
+    if(!a.usrDestino){ continue; } // saltear los "sin asignar"
+    prog.textContent=`📦 Importando ${i+1}/${analizados.length}: ${a.nom}…`;
+
+    try{
+      const dbDestNom=`${DBN_PREFIX}${a.usrDestino.id}`;
+      // Abrir BD destino
+      let dbDest;
+      if(dbDestNom===(_usuarioActual?.dbName)){
+        dbDest=db;
+      }else{
+        dbDest=await new Promise(res=>{
+          const r=indexedDB.open(dbDestNom,DBV);
+          r.onsuccess=e=>res(e.target.result);
+          r.onerror=()=>res(null);
+          r.onupgradeneeded=e=>{
+            const d=e.target.result;
+            if(!d.objectStoreNames.contains('alumnos')){
+              const s=d.createObjectStore('alumnos',{keyPath:'id',autoIncrement:true});
+              s.createIndex('uuid','uuid',{unique:false});
+              s.createIndex('updated_at','updated_at');
+            }
+            if(!d.objectStoreNames.contains('cfg')) d.createObjectStore('cfg',{keyPath:'k'});
+            if(!d.objectStoreNames.contains('pdfs')) d.createObjectStore('pdfs',{keyPath:'id',autoIncrement:true});
+          };
+        });
+      }
+      if(!dbDest){ errores++; continue; }
+
+      const iputD=(o)=>new Promise(r=>{ const t=dbDest.transaction('alumnos','readwrite'); t.objectStore('alumnos').put(o).onsuccess=e=>r(e.target.result); });
+      const getUuidD=(uuid)=>new Promise(r=>{ const t=dbDest.transaction('alumnos','readonly'); t.objectStore('alumnos').index('uuid').get(uuid).onsuccess=e=>r(e.target.result); });
+
+      let registros=[];
+      if(a.tipo==='json' && a.meta.raw){
+        registros=a.meta.raw.alumnos||[];
+      } else if(a.tipo==='db' && a.meta.arrayBuf && SQL){
+        const sdb=new SQL.Database(new Uint8Array(a.meta.arrayBuf));
+        const res2=sdb.exec("SELECT * FROM alumnos WHERE deleted=0 OR deleted IS NULL");
+        if(res2.length){
+          const cols=res2[0].columns;
+          registros=res2[0].values.map(row=>{ const o={}; cols.forEach((c,ci)=>o[c]=row[ci]); return o; });
+        }
+        sdb.close();
+      }
+
+      for(const raw of registros){
+        if(!raw.uuid||!String(raw.uuid).trim()) raw.uuid=uid();
+        if(raw.emerg_tel!==undefined && raw.emergencia_tel===undefined){ raw.emergencia_tel=raw.emerg_tel; delete raw.emerg_tel; }
+        if(raw.foto && !String(raw.foto).startsWith('data:')) raw.foto='';
+        // ── Comprimir foto si viene en alta resolución del PC ──
+        if(raw.foto) raw.foto = await _comprimirFotoImport(raw.foto);
+        const a2={
+          rut:String(raw.rut||''), nombre:String(raw.nombre||'(Sin nombre)'),
+          curso:String(raw.curso||''), curso_origen:String(raw.curso_origen||''),
+          direccion:String(raw.direccion||''), foto:raw.foto||'',
+          papa:String(raw.papa||''), papa_tel:String(raw.papa_tel||''),
+          mama:String(raw.mama||''), mama_tel:String(raw.mama_tel||''),
+          emergencia:String(raw.emergencia||''), emergencia_tel:String(raw.emergencia_tel||''),
+          medicamento:String(raw.medicamento||''), enfermedad_cronica:String(raw.enfermedad_cronica||''),
+          observaciones:String(raw.observaciones||''), uuid:String(raw.uuid),
+          updated_at:String(raw.updated_at||'2024-01-01T00:00:00'), deleted:0,
+          comuna:String(raw.comuna||''),
+        };
+        const ex=await getUuidD(a2.uuid);
+        if(ex){ a2.id=ex.id; if(!a2.foto&&ex.foto) a2.foto=ex.foto; await iputD(a2); totalUpd++; }
+        else{ delete a2.id; await iputD(a2); totalIns++; }
+      }
+    }catch(err){
+      console.error('ZIP import error en '+a.nom+':',err);
+      errores++;
+    }
+  }
+
+  prog.remove();
+  await buscar(); await refreshUI(); agMarcar();
+
+  const resumen=`✓ ZIP importado — ${totalIns} nuevos · ${totalUpd} actualizados`+(errores?` · ⚠ ${errores} error(es)`:'');
+  toast(resumen,'s',5000);
+}
+
+// ══ FIN IMPORTAR ZIP ══
+
 async function importar(){
   // Si hay múltiples niveles en el grupo, preguntar a cuál nivel importar
   const grupo = _usuarioActual?._grupoUsuarios||[];
@@ -3061,6 +3394,8 @@ async function importarSQLite(file){
         fotoFinal = '';
         sinFoto++;
       }
+      // ── Comprimir foto si viene en alta resolución del PC ──
+      if(fotoFinal) fotoFinal = await _comprimirFotoImport(fotoFinal);
 
       const a={
         rut:              String(raw.rut||''),
@@ -3131,6 +3466,8 @@ async function importarJSON(file){
     if(a.foto && !String(a.foto).startsWith('data:')){
       a.foto=''; sinFoto++;
     }
+    // ── Comprimir foto si viene en alta resolución del PC ──
+    if(a.foto) a.foto = await _comprimirFotoImport(a.foto);
     const ex=await getByUuid(a.uuid);
     if(ex){
       a.id=ex.id;
@@ -4198,8 +4535,9 @@ async function autoguardarSilencioso(){
   try{
     const all=await iall('alumnos'),cfg=await iall('cfg');
     const d=JSON.stringify({version:1,ts:ts(),alumnos:all,config:cfg});
-    localStorage.setItem('cnm_autoguardado',d);
-    localStorage.setItem('cnm_autoguardado_ts',new Date().toISOString());
+    const _agKey='cnm_autoguardado_'+(_usuarioActual?.dbName||'default');
+    localStorage.setItem(_agKey,d);
+    localStorage.setItem(_agKey+'_ts',new Date().toISOString());
     _agPendiente=false;
     _agSetDot('ok');
     const hora=new Date().toLocaleTimeString('es-CL',{hour:'2-digit',minute:'2-digit'});
@@ -4222,13 +4560,14 @@ function _agSetDot(estado){
 // Restaurar desde autoguardado al iniciar si hay datos más nuevos
 async function restaurarAutoguardado(){
   try{
-    const raw=localStorage.getItem('cnm_autoguardado');
+    const _agKey='cnm_autoguardado_'+(_usuarioActual?.dbName||'default');
+    const raw=localStorage.getItem(_agKey);
     if(!raw)return;
     const data=JSON.parse(raw);
     if(!data.alumnos||!data.alumnos.length)return;
     // Solo restaurar si hay alumnos en el autoguardado
     const locales=await iall('alumnos');
-    const tsGuard=localStorage.getItem('cnm_autoguardado_ts')||'';
+    const tsGuard=localStorage.getItem(_agKey+'_ts')||'';
     const tsLocal=locales.reduce((mx,a)=>a.updated_at>mx?a.updated_at:mx,'');
     if(tsGuard>tsLocal||locales.length<data.alumnos.length){
       let ins=0,upd=0;
@@ -4238,6 +4577,8 @@ async function restaurarAutoguardado(){
         if(a.emerg_tel!==undefined && a.emergencia_tel===undefined){
           a.emergencia_tel=a.emerg_tel; delete a.emerg_tel;
         }
+        // ── Comprimir foto si viene en alta resolución del PC ──
+        if(a.foto && String(a.foto).startsWith('data:')) a.foto = await _comprimirFotoImport(a.foto);
         const ex=await getByUuid(a.uuid);
         if(ex){ a.id=ex.id; await iput('alumnos',a); upd++; }
         else{ delete a.id; await iput('alumnos',a); ins++; }
@@ -4948,6 +5289,8 @@ async function syncConfirmar(){
     let ins=0,upd=0;
     for(const a of registros){
       if(!a.uuid)continue;
+      // ── Comprimir foto si viene en alta resolución del PC ──
+      if(a.foto && String(a.foto).startsWith('data:')) a.foto = await _comprimirFotoImport(a.foto);
       const ex=await getByUuid(a.uuid);
       if(ex){
         a.id=ex.id;
@@ -5449,6 +5792,8 @@ async function sd2dImportar(){
         await iput('alumnos',a); upd++;
       }else{
         delete a.id;
+        // ── Comprimir foto nueva que llega del PC ──
+        if(a.foto && String(a.foto).startsWith('data:')) a.foto = await _comprimirFotoImport(a.foto);
         if(a.foto) fotosNuevas++;
         await iput('alumnos',a); ins++;
       }
@@ -5515,8 +5860,9 @@ async function guardarCambios(){
     const pdfs = await iall('pdfs');
     // Guardar autoguardado con timestamp actual
     const d = JSON.stringify({version:1, ts:new Date().toISOString(), alumnos:todos, config:cfg});
-    localStorage.setItem('cnm_autoguardado', d);
-    localStorage.setItem('cnm_autoguardado_ts', new Date().toISOString());
+    const _agKey='cnm_autoguardado_'+(_usuarioActual?.dbName||'default');
+    localStorage.setItem(_agKey, d);
+    localStorage.setItem(_agKey+'_ts', new Date().toISOString());
     _agPendiente = false;
     _agSetDot('ok');
     const hora = new Date().toLocaleTimeString('es-CL',{hour:'2-digit',minute:'2-digit'});
