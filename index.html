@@ -4548,7 +4548,10 @@ async function autoguardarSilencioso(){
   if(!_agPendiente)return;
   try{
     const all=await iall('alumnos'),cfg=await iall('cfg');
-    const d=JSON.stringify({version:1,ts:ts(),alumnos:all,config:cfg});
+    // Excluir fotos del autoguardado en localStorage para evitar QuotaExceededError
+    // Las fotos ya están seguras en IndexedDB
+    const alumnosSinFoto=all.map(a=>({...a,foto:''}));
+    const d=JSON.stringify({version:1,ts:ts(),alumnos:alumnosSinFoto,config:cfg});
     const _agKey='cnm_autoguardado_'+(_usuarioActual?.dbName||'default');
     localStorage.setItem(_agKey,d);
     localStorage.setItem(_agKey+'_ts',new Date().toISOString());
@@ -4591,9 +4594,11 @@ async function restaurarAutoguardado(){
         if(a.emerg_tel!==undefined && a.emergencia_tel===undefined){
           a.emergencia_tel=a.emerg_tel; delete a.emerg_tel;
         }
+        const ex=await getByUuid(a.uuid);
+        // Preservar foto existente en IndexedDB (autoguardado no incluye fotos para ahorrar espacio)
+        if(!a.foto && ex && ex.foto) a.foto=ex.foto;
         // ── Comprimir foto si viene en alta resolución del PC ──
         if(a.foto && String(a.foto).startsWith('data:')) a.foto = await _comprimirFotoImport(a.foto);
-        const ex=await getByUuid(a.uuid);
         if(ex){ a.id=ex.id; await iput('alumnos',a); upd++; }
         else{ delete a.id; await iput('alumnos',a); ins++; }
       }
@@ -6070,7 +6075,7 @@ function scrollVisor(delta){
 (function(){
   if(!('serviceWorker' in navigator))return;
   const swCode=`
-const C='cnm-v4';
+const C='cnm-v5';
 self.addEventListener('install',e=>{self.skipWaiting();});
 self.addEventListener('activate',e=>{
   e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==C).map(k=>caches.delete(k)))));
@@ -6078,6 +6083,17 @@ self.addEventListener('activate',e=>{
 });
 self.addEventListener('fetch',e=>{
   const u=e.request.url;
+  // Para la página principal (navigate): siempre ir a red primero, caché como fallback
+  if(e.request.mode==='navigate'){
+    e.respondWith(
+      fetch(e.request).then(r=>{
+        const cl=r.clone();
+        caches.open(C).then(cache=>cache.put(e.request,cl));
+        return r;
+      }).catch(()=>caches.match(e.request))
+    );
+    return;
+  }
   if(u.includes('cdnjs')||u.includes('fonts.g')){
     e.respondWith(caches.match(e.request).then(c=>{
       return c||fetch(e.request).then(r=>{
