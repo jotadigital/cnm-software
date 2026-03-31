@@ -498,6 +498,7 @@ textarea.fi{resize:none;min-height:75px}
       <button class="nb" onclick="importarZip();closeSB()" style="color:#1A6B3A;font-weight:800"><span class="ni">📦</span>Importar ZIP</button>
       <button class="nb" onclick="importar();closeSB()"><span class="ni">📥</span>Importar BD (manual)</button>
       <button class="nb" onclick="respaldarSQLite();closeSB()" style="color:var(--green)"><span class="ni">💾</span>Exportar BD</button>
+      <button class="nb" onclick="exportarTodo();closeSB()" style="color:#8B6914;font-weight:800"><span class="ni">📤</span>Exportar TODO (Android)</button>
       <button class="nb" onclick="openM('mconvertir');closeSB()" style="color:var(--blue)"><span class="ni">🔄</span>Convertir BD</button>
       <button class="nb" onclick="openSyncWifi();closeSB()" style="color:#2ecc71"><span class="ni">↕</span>Sync WiFi PC</button>
       <button class="nb" onclick="openAdmin();closeSB()"><span class="ni">⚙</span>Administración</button>
@@ -1855,7 +1856,7 @@ function _comprimirFotoImport(b64){
     img.onload=()=>{
       try{
         const opt=_encontrarResolucionOptima(img);
-        resolve(opt.b64);
+        resolve(opt.b64||b64); // si opt.b64 viene vacío, usar original
       }catch(e){ resolve(b64); }
     };
     img.src=b64;
@@ -2852,6 +2853,77 @@ function _detectarNivelPorNombre(nombre){
   return '';
 }
 
+// ══════════════════════════════════════════════════
+// ── EXPORTAR TODO PARA ANDROID ────────────────────
+async function exportarTodo(){
+  if(!_usuarioActual?.esAdmin){toast('\u26a0 Solo el administrador puede exportar todo','e');return;}
+  const zipOk=await _cargarJSZip();
+  if(!zipOk){toast('\u26a0 Sin internet para cargar compresor ZIP','e');return;}
+  toast('\ud83d\udce6 Preparando exportaci\u00f3n completa\u2026','i');
+  const zip=new JSZip();
+  const fecha=new Date().toISOString().slice(0,10);
+  const todosUsr=await iallA('usuarios');
+  const usuariosExport=todosUsr.map(u=>({
+    usuario:u.usuario, password:u.password,
+    nombre_colegio:u.nombre_colegio||'', colegio_grupo:u.colegio_grupo||'',
+    nivel:u.nivel||'', esAdmin:u.esAdmin||false, creado:u.creado||''
+  }));
+  zip.file('_config_usuarios.json', JSON.stringify({version:1,ts:new Date().toISOString(),usuarios:usuariosExport}));
+  const usrsConDatos=todosUsr.filter(u=>!u.esAdmin);
+  let totalAlumnos=0, totalNiveles=0;
+  const nivelClaveMapa={'PRE BASICA':'pre_basica','BASICA':'basica','MEDIA':'media'};
+  const nivelLabelMapa={'PRE BASICA':'PRE-B\u00c1SICA','BASICA':'B\u00c1SICA 1\u00b0-8\u00b0','MEDIA':'MEDIA 1\u00b0-4\u00b0'};
+  for(const usr of usrsConDatos){
+    const dbNom=`${DBN_PREFIX}${usr.id}`;
+    try{
+      const dbUsr=await new Promise(res=>{
+        const r=indexedDB.open(dbNom,DBV);
+        r.onsuccess=e=>res(e.target.result);
+        r.onerror=()=>res(null);
+        r.onupgradeneeded=e=>{
+          const d=e.target.result;
+          if(!d.objectStoreNames.contains('alumnos')){
+            const s=d.createObjectStore('alumnos',{keyPath:'id',autoIncrement:true});
+            s.createIndex('uuid','uuid',{unique:false});
+          }
+          if(!d.objectStoreNames.contains('cfg')) d.createObjectStore('cfg',{keyPath:'k'});
+        };
+      });
+      if(!dbUsr) continue;
+      const alumnos=await new Promise(r=>dbUsr.transaction('alumnos','readonly').objectStore('alumnos').getAll().onsuccess=e=>r(e.target.result));
+      const cfg=await new Promise(r=>dbUsr.transaction('cfg','readonly').objectStore('cfg').getAll().onsuccess=e=>r(e.target.result));
+      const nivel=usr.nivel||'';
+      const grupo=(usr.colegio_grupo||usr.nombre_colegio||'colegio').replace(/\s+/g,'_').toLowerCase().replace(/[^a-z0-9_]/g,'');
+      const nivelSlug=nivel.replace(/\s+/g,'_').toLowerCase().replace(/[^a-z0-9_]/g,'');
+      const nombreArchivo=nivelSlug?`${grupo}_${nivelSlug}_${fecha}.json`:`${grupo}_${fecha}.json`;
+      const activos=alumnos.filter(a=>!a.deleted);
+      const cfgExtra=[
+        {k:'nivel_clave',v:nivelClaveMapa[nivel]||nivelSlug},
+        {k:'nivel_label',v:nivelLabelMapa[nivel]||nivel},
+        {k:'colegio_nombre',v:usr.colegio_grupo||usr.nombre_colegio||''}
+      ];
+      const data={version:1,ts:new Date().toISOString(),alumnos:activos,config:[...cfg,...cfgExtra]};
+      zip.file(nombreArchivo, JSON.stringify(data));
+      totalAlumnos+=activos.length; totalNiveles++;
+    }catch(e){ console.warn('Error exportando usuario',usr.id,e); }
+  }
+  try{
+    const zipBlob=await zip.generateAsync({type:'blob',compression:'DEFLATE',compressionOptions:{level:6}});
+    const reader=new FileReader();
+    reader.onload=function(e){
+      const a=document.createElement('a');
+      a.href=e.target.result;
+      a.download=`cnm_completo_${fecha}.zip`;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    };
+    reader.readAsDataURL(zipBlob);
+    toast(`\u2713 ZIP completo listo \u2014 ${totalNiveles} nivel(es) \u00b7 ${totalAlumnos} alumnos`,'s',5000);
+  }catch(err){
+    toast('\u26a0 Error al generar ZIP: '+err.message,'e');
+    console.error('exportarTodo:',err);
+  }
+}
+
 function importarZip(){
   const inp=document.getElementById('importZipInput');
   inp.value=''; inp.click();
@@ -2888,21 +2960,53 @@ async function onImportZip(e){
 
   // 4. Reunir archivos .db y .json del ZIP (ignora carpetas y archivos no relevantes)
   const archivos=[];
+  let _cfgUsrEntry=null;
   zip.forEach((ruta,entry)=>{
     if(entry.dir) return;
     const nom=ruta.split('/').pop().toLowerCase();
     if(nom.startsWith('.') || nom.startsWith('__')) return;
+    if(nom==='_config_usuarios.json'){_cfgUsrEntry=entry; return;}
     if(nom.endsWith('.db') || nom.endsWith('.json')) archivos.push({ruta, entry, nom});
   });
 
-  if(!archivos.length){
+  if(!archivos.length && !_cfgUsrEntry){
     toast('⚠ El ZIP no contiene archivos .db ni .json','e'); return;
   }
 
   // 5. Analizar cada archivo y detectar su nivel
   const todosUsr=await iallA('usuarios');
-  const usrsConNivel=todosUsr.filter(u=>!u.esAdmin && u.nivel);
   const nivelOrd={'PRE BASICA':1,'BASICA':2,'MEDIA':3};
+
+  // 5b. Si viene _config_usuarios.json, crear usuarios que no existan
+  if(_cfgUsrEntry){
+    try{
+      const cfgData=JSON.parse(await _cfgUsrEntry.async('text'));
+      if(cfgData.usuarios){
+        let creados=0;
+        for(const u of cfgData.usuarios){
+          if(u.esAdmin) continue;
+          const existe=todosUsr.find(eu=>
+            (eu.colegio_grupo||eu.nombre_colegio||'')===(u.colegio_grupo||u.nombre_colegio||'')
+            && (eu.nivel||'')===(u.nivel||'')
+            && !eu.esAdmin
+          );
+          if(!existe){
+            await iputA('usuarios',{
+              usuario:u.usuario, password:u.password,
+              nombre_colegio:u.nombre_colegio||'', colegio_grupo:u.colegio_grupo||'',
+              nivel:u.nivel||'', esAdmin:false, creado:u.creado||new Date().toISOString()
+            });
+            creados++;
+          }
+        }
+        if(creados>0) toast(`✓ ${creados} usuario(s) creados automáticamente`,'s',3000);
+        todosUsr.length=0; todosUsr.push(...(await iallA('usuarios')));
+      }
+    }catch(e){ console.warn('Error procesando _config_usuarios.json:',e); }
+    if(!archivos.length){ toast('✓ Configuración aplicada correctamente','s',3000); return; }
+  }
+
+  const usrsConNivel=todosUsr.filter(u=>!u.esAdmin && u.nivel);
   usrsConNivel.sort((a,b)=>(nivelOrd[a.nivel]||9)-(nivelOrd[b.nivel]||9));
 
   const analizados=[];
@@ -4969,10 +5073,14 @@ function loginElegirGrupo(){
 function loginVolverCards(){
   _loginUsuarioActual=null;
   document.getElementById('login-cards').style.display='flex';
-  document.getElementById('login-nivel-wrap').style.display='none';
-  document.getElementById('login-pwd-wrap').style.display='none';
-  document.getElementById('login-btn-entrar').style.display='none';
-  document.getElementById('login-msg').textContent='';
+  const _nivelWrap=document.getElementById('login-nivel-wrap');
+  if(_nivelWrap) _nivelWrap.style.display='none';
+  const _pwdWrap=document.getElementById('login-pwd-wrap');
+  if(_pwdWrap) _pwdWrap.style.display='none';
+  const _btnEntrar=document.getElementById('login-btn-entrar');
+  if(_btnEntrar) _btnEntrar.style.display='none';
+  const _msgEl=document.getElementById('login-msg');
+  if(_msgEl) _msgEl.textContent='';
 }
 
 function loginElegir(usuario, grupo, nivel, pwd, esAdmin){
