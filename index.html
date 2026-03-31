@@ -4722,7 +4722,10 @@ async function autoguardarSilencioso(){
   if(!_agPendiente)return;
   try{
     const all=await iall('alumnos'),cfg=await iall('cfg');
-    const d=JSON.stringify({version:1,ts:ts(),alumnos:all,config:cfg});
+    // ── CRÍTICO: guardar SIN fotos en localStorage para evitar QuotaExceededError
+    // Las fotos viven en IndexedDB — son recuperadas en restaurarAutoguardado()
+    const alumnosSinFoto=all.map(a=>({...a,foto:''}));
+    const d=JSON.stringify({version:1,ts:ts(),alumnos:alumnosSinFoto,config:cfg});
     const _agKey='cnm_autoguardado_'+(_usuarioActual?.dbName||'default');
     localStorage.setItem(_agKey,d);
     localStorage.setItem(_agKey+'_ts',new Date().toISOString());
@@ -4758,6 +4761,9 @@ async function restaurarAutoguardado(){
     const tsGuard=localStorage.getItem(_agKey+'_ts')||'';
     const tsLocal=locales.reduce((mx,a)=>a.updated_at>mx?a.updated_at:mx,'');
     if(tsGuard>tsLocal||locales.length<data.alumnos.length){
+      // ── Detectar si el autoguardado NO tiene fotos (guardado sin fotos por diseño) ──
+      // En ese caso solo insertar alumnos nuevos, NO sobreescribir existentes
+      const autoguardadoSinFotos = data.alumnos.every(a=>!a.foto);
       let ins=0,upd=0;
       for(const a of data.alumnos){
         if(!a.uuid)a.uuid=uid();
@@ -4768,7 +4774,19 @@ async function restaurarAutoguardado(){
         // ── Comprimir foto si viene en alta resolución del PC ──
         if(a.foto && String(a.foto).startsWith('data:')) a.foto = await _comprimirFotoImport(a.foto);
         const ex=await getByUuid(a.uuid);
-        if(ex){ a.id=ex.id; await iput('alumnos',a); upd++; }
+        if(ex){
+          a.id=ex.id;
+          // ── CRÍTICO: conservar foto de IndexedDB si el autoguardado no la trae ──
+          if(!a.foto && ex.foto) a.foto=ex.foto;
+          // ── Si el autoguardado no tiene fotos (guardado normal al cerrar/autoguardar)
+          //    y el registro ya existe en IndexedDB sin cambios de datos relevantes,
+          //    solo actualizar si updated_at del autoguardado es más reciente ──
+          if(autoguardadoSinFotos && ex.updated_at && a.updated_at && ex.updated_at>=a.updated_at){
+            // El registro en IndexedDB es igual o más reciente — no sobreescribir
+            continue;
+          }
+          await iput('alumnos',a); upd++;
+        }
         else{ delete a.id; await iput('alumnos',a); ins++; }
       }
       if(ins+upd>0){
