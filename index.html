@@ -447,9 +447,9 @@ textarea.fi{resize:none;min-height:75px}
         style="width:100%;margin-top:12px;padding:9px;background:none;border:1px solid #EEE;border-radius:8px;color:#bbb;font-size:11px;cursor:pointer;font-family:Nunito,sans-serif">
         🔑 Olvidé mi contraseña
       </button>
-      <button onclick="window.location.reload(true)"
+      <button onclick="actualizarApp()"
         style="width:100%;margin-top:8px;padding:9px;background:#E8F0FE;border:1px solid #1F6FEB;border-radius:8px;color:#1F6FEB;font-size:11px;font-weight:700;cursor:pointer;font-family:Nunito,sans-serif">
-        🔄 Actualizar app
+        🔄 Actualizar app (limpiar caché)
       </button>
 
       <div style="text-align:center;font-size:10px;color:#ddd;margin-top:14px">CNM Software © 2025 · v72</div>
@@ -526,8 +526,8 @@ textarea.fi{resize:none;min-height:75px}
         <button onclick="respaldarSQLite()" style="flex:1;display:flex;align-items:center;justify-content:center;gap:5px;background:#E6F4EC;color:#1A6B3A;border:1px solid #1A6B3A;border-radius:8px;padding:7px 10px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Rajdhani',sans-serif">
           <span>💾</span> Exportar BD
         </button>
-        <button onclick="actualizarApp()" style="flex:1;display:flex;align-items:center;justify-content:center;gap:5px;background:#E8F0FE;color:#1F6FEB;border:1px solid #1F6FEB;border-radius:8px;padding:7px 10px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Rajdhani',sans-serif">
-          <span>🔄</span> Actualizar
+        <button onclick="actualizarApp()" title="Limpia caché y descarga la última versión desde el servidor" style="flex:1;display:flex;align-items:center;justify-content:center;gap:5px;background:#E8F0FE;color:#1F6FEB;border:1px solid #1F6FEB;border-radius:8px;padding:7px 10px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Rajdhani',sans-serif">
+          <span>🔄</span> Actualizar app
         </button>
         <button onclick="cerrarSesion()" style="flex:1;display:flex;align-items:center;justify-content:center;gap:5px;background:#FDECEA;color:#C0392B;border:1px solid #C0392B;border-radius:8px;padding:7px 10px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Rajdhani',sans-serif">
           <span>🔒</span> Cerrar sesión
@@ -739,7 +739,23 @@ textarea.fi{resize:none;min-height:75px}
         <div class="frow"><label class="fl">EMAIL</label><input id="a-email" class="fi" type="email"></div>
         <div id="admsg" style="font-size:12px;min-height:16px;padding:3px 0"></div>
       </div>
-      <button class="bp" onclick="guardarAdmin()">💾 GUARDAR CAMBIOS</button>
+      <div class="fsec" style="margin-top:10px;border:1px solid #C9A84C;border-radius:10px;padding:14px">
+        <div class="stitle" style="color:#8B6914">☁ SINCRONIZACIÓN GITHUB</div>
+        <div style="font-size:11px;color:#888;margin-bottom:10px;line-height:1.6">
+          URL del archivo <strong>.json</strong> exportado desde el PC y subido a GitHub.<br>
+          Al iniciar sesión se descargará automáticamente.<br>
+          <span style="color:#C9A84C;font-weight:700">Formato: https://raw.githubusercontent.com/USUARIO/REPO/main/cnm_backup.json</span>
+        </div>
+        <div class="frow"><label class="fl">URL BACKUP GITHUB</label><input id="a-ghurl" class="fi" type="url" placeholder="https://raw.githubusercontent.com/..."></div>
+        <div class="frow" style="margin-top:8px"><label class="fl" style="color:#8B6914">URL LISTA COLEGIOS</label><input id="a-ghcolegios" class="fi" type="url" placeholder="https://raw.githubusercontent.com/.../colegios.json"></div>
+        <div style="font-size:10px;color:#aaa;margin-top:3px">Archivo público con la lista de colegios disponibles. Se muestra en el login al abrir la app.</div>
+        <div id="gh-test-msg" style="font-size:11px;min-height:14px;padding:2px 0"></div>
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <button class="bp" onclick="probarGitHubUrl()" style="flex:1;background:#8B6914">🔗 PROBAR URL</button>
+          <button class="bp" onclick="sincronizarDesdeGitHub(true)" style="flex:2;background:#1A6B3A">☁ SINCRONIZAR AHORA</button>
+        </div>
+      </div>
+      <button class="bp" onclick="guardarAdmin()" style="margin-top:10px">💾 GUARDAR CAMBIOS</button>
     </div>
     <!-- TAB CREDENCIALES -->
     <div class="tabc" id="tadm-cred">
@@ -1455,6 +1471,9 @@ textarea.fi{resize:none;min-height:75px}
 // ═══════════════════════════════════════════════════
 
 // ─── MULTIUSUARIO ─────────────────────────────────
+// ── Versión de la app — debe coincidir con el texto en el HTML ──
+const APP_VERSION = 'v72';
+
 const DBN_ADMIN='cnm_master_v1'; // BD maestra (lista de usuarios)
 const DBN_PREFIX='cnm_v4_usr_';  // prefijo BD por usuario
 const DBV=4;
@@ -3655,6 +3674,9 @@ async function openAdmin(){
   const c=await acfg();
   sv('a-nom',c.nombre_colegio);sv('a-dir',c.direccion);
   sv('a-tel',c.telefono);sv('a-email',c.email);
+  sv('a-ghurl',c.github_backup_url||'');
+  sv('a-ghcolegios',c.github_colegios_url||'');
+  document.getElementById('gh-test-msg').textContent='';
   if(c.logo){document.getElementById('logoprev').innerHTML=`<img src="${c.logo}" style="width:100%;height:100%;object-fit:cover;border-radius:7px">`}
   const tabBtn=document.getElementById('tab-usuarios-btn');
   if(tabBtn) tabBtn.style.display=(_usuarioActual&&_usuarioActual.esAdmin)?'flex':'none';
@@ -3676,6 +3698,11 @@ async function guardarAdmin(){
   await scfg('direccion',gv('a-dir').trim());
   await scfg('telefono',gv('a-tel').trim());
   await scfg('email',gv('a-email').trim());
+  await scfg('github_backup_url',gv('a-ghurl').trim());
+  const ghCol=gv('a-ghcolegios').trim();
+  await scfg('github_colegios_url',ghCol);
+  _GITHUB_COLEGIOS_URL=ghCol;
+  _todosColegios=[];  // forzar recarga del login
   if(logoAdm==='__remove__')await scfg('logo','');
   else if(logoAdm)await scfg('logo',logoAdm);
   logoAdm='';
@@ -4659,9 +4686,29 @@ async function resetCredenciales(){
 
 // ─── INIT ─────────────────────────────────────────
 // ─── CERRAR SESIÓN ────────────────────────────────
-function actualizarApp(){
-  toast('🔄 Actualizando…','i');
-  setTimeout(()=>{ window.location.reload(true); }, 400);
+async function actualizarApp(){
+  toast('🔄 Buscando actualización…','i');
+  try{
+    // 1. Desregistrar todos los Service Workers activos
+    if('serviceWorker' in navigator){
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map(r=>r.unregister()));
+    }
+    // 2. Limpiar TODOS los caches del navegador
+    if('caches' in window){
+      const keys = await caches.keys();
+      await Promise.all(keys.map(k=>caches.delete(k)));
+    }
+    // 3. Recargar forzando descarga desde servidor con timestamp único
+    toast('✅ Caché limpia — recargando…','s');
+    setTimeout(()=>{
+      const url = new URL(window.location.href);
+      url.searchParams.set('_v', Date.now());
+      window.location.replace(url.toString());
+    }, 700);
+  }catch(e){
+    window.location.reload(true);
+  }
 }
 
 async function cerrarSesion(){
@@ -4838,15 +4885,80 @@ async function _eliminarColegioDB(id){
   await idelA('colegios', id);
 }
 
+// ── URL del colegios.json en GitHub (configurable en Administración) ──
+// Si está vacío, solo muestra colegios locales
+let _GITHUB_COLEGIOS_URL = '';
+
+async function _getGithubColegiosUrl(){
+  try{ _GITHUB_COLEGIOS_URL = (await gcfg('github_colegios_url'))||''; }catch(e){}
+  return _GITHUB_COLEGIOS_URL;
+}
+
+// ── Descarga lista de colegios desde GitHub y la fusiona con locales ──
+async function _fetchColegiosGitHub(){
+  const url = await _getGithubColegiosUrl();
+  if(!url) return [];
+  try{
+    const res = await fetch(url+'?_t='+Date.now(),{cache:'no-store'});
+    if(!res.ok) return [];
+    const data = await res.json();
+    return Array.isArray(data) ? data : [];
+  }catch(e){ return []; }
+}
+
+// ── Fusiona colegios locales (IndexedDB) con colegios de GitHub ──
+// GitHub gana en nombre/niveles; locales tienen la pwd real
+async function _cargarColegiosFusion(){
+  const locales  = await _cargarColegiosDB();
+  const remotos  = await _fetchColegiosGitHub();
+  if(!remotos.length) return locales;
+
+  const mapa = {};
+  locales.forEach(c => mapa[c.nombre.toUpperCase()] = c);
+
+  const resultado = [...locales];
+  for(const rem of remotos){
+    const key = (rem.nombre||'').toUpperCase();
+    if(!key) continue;
+    if(mapa[key]){
+      // Colegio ya existe en local — actualizar niveles si hay diferencia
+      const local = mapa[key];
+      if(rem.niveles && rem.niveles.length) local.niveles = rem.niveles;
+    } else {
+      // Colegio nuevo desde GitHub — agregarlo sin contraseña local
+      resultado.push({
+        nombre: rem.nombre, slug: rem.slug||'',
+        niveles: rem.niveles||['PRE BASICA','BASICA','MEDIA'],
+        pwd: '', usuario: rem.nombre,
+        _soloGithub: true  // marcador: no tiene BD local aún
+      });
+    }
+  }
+  return resultado;
+}
+
 // ── Renderiza las tarjetas de login ──
-async function renderLoginCards(){
+let _todosColegios = [];  // caché para el filtro de búsqueda
+
+async function renderLoginCards(filtro=''){
   const container = document.getElementById('login-cards');
   if(!container) return;
   container.innerHTML = '';
 
-  // Tarjeta Admin
+  // ── Barra de búsqueda (visible si hay más de 3 colegios) ──
+  if(!filtro && _todosColegios.length === 0){
+    // Primera carga: obtener colegios (local + GitHub)
+    container.innerHTML = '<div style="text-align:center;color:#aaa;padding:16px;font-size:12px">⏳ Cargando colegios…</div>';
+    _todosColegios = await _cargarColegiosFusion();
+    container.innerHTML = '';
+  }
+  const colegiosFiltrados = filtro
+    ? _todosColegios.filter(c => c.nombre.toLowerCase().includes(filtro.toLowerCase()))
+    : _todosColegios;
+
+  // ── Tarjeta Admin (siempre arriba) ──
   const adminBtn = document.createElement('button');
-  adminBtn.style.cssText = 'display:flex;align-items:center;gap:12px;background:#FDF3DC;border:1.5px solid #C9A84C;border-radius:12px;padding:12px 16px;cursor:pointer;width:100%;text-align:left;transition:all .15s';
+  adminBtn.style.cssText = 'display:flex;align-items:center;gap:12px;background:#FDF3DC;border:1.5px solid #C9A84C;border-radius:12px;padding:12px 16px;cursor:pointer;width:100%;text-align:left;transition:all .15s;flex-shrink:0';
   adminBtn.onmouseover = () => adminBtn.style.borderColor = '#8B6914';
   adminBtn.onmouseout  = () => adminBtn.style.borderColor = '#C9A84C';
   adminBtn.onclick = () => loginElegir('admin','ADMINISTRADOR','','0000',true);
@@ -4859,15 +4971,45 @@ async function renderLoginCards(){
     <div style="margin-left:auto;color:#C9A84C;font-size:20px">›</div>`;
   container.appendChild(adminBtn);
 
-  // Colegios desde DB
-  const colegios = await _cargarColegiosDB();
-  colegios.forEach((col, idx) => {
+  // ── Separador + buscador (si hay colegios) ──
+  if(_todosColegios.length > 0){
+    const sepTop = document.createElement('div');
+    sepTop.style.cssText = 'border-top:1px solid #eee;margin:6px 0 4px';
+    container.appendChild(sepTop);
+
+    if(_todosColegios.length >= 3){
+      const searchWrap = document.createElement('div');
+      searchWrap.style.cssText = 'display:flex;align-items:center;gap:8px;background:#F4F5F7;border-radius:8px;padding:8px 12px;margin-bottom:8px;border:1.5px solid #DDE0E4';
+      searchWrap.innerHTML = `<span style="color:#aaa;font-size:14px">🔍</span>
+        <input id="login-buscar-colegio" type="search" placeholder="Buscar colegio…"
+          style="flex:1;border:none;background:none;outline:none;font-size:13px;font-family:Nunito,sans-serif;color:#111"
+          oninput="renderLoginCards(this.value)"
+          value="${filtro}">`;
+      container.appendChild(searchWrap);
+      // Focus si ya hay texto
+      if(filtro) setTimeout(()=>{ const el=document.getElementById('login-buscar-colegio'); if(el){el.focus();el.setSelectionRange(filtro.length,filtro.length);} },50);
+    }
+  }
+
+  // ── Tarjetas de colegios ──
+  if(colegiosFiltrados.length === 0 && filtro){
+    const noRes = document.createElement('div');
+    noRes.style.cssText = 'text-align:center;color:#aaa;font-size:12px;padding:12px';
+    noRes.textContent = 'Sin resultados para "'+filtro+'"';
+    container.appendChild(noRes);
+  }
+
+  colegiosFiltrados.forEach((col, idx) => {
     const pal = _colorColegio(idx);
     const nivLabels = (col.niveles||[]).map(n =>
-      `<span style="font-size:10px;background:${pal.bg};color:${pal.color};border:1px solid ${pal.border};border-radius:8px;padding:1px 6px;font-weight:700">${n}</span>`
+      `<span style="font-size:10px;background:${pal.bg};color:${pal.color};border:1px solid ${pal.border};border-radius:8px;padding:1px 7px;font-weight:700;white-space:nowrap">${n}</span>`
     ).join('');
+    // Badge si es solo GitHub (sin BD local aún)
+    const ghBadge = col._soloGithub
+      ? `<span style="font-size:9px;background:#E8F0FE;color:#1F6FEB;border:1px solid #1F6FEB;border-radius:6px;padding:1px 5px;font-weight:700">GITHUB</span>`
+      : '';
     const btn = document.createElement('button');
-    btn.style.cssText = `display:flex;align-items:center;gap:12px;background:${pal.bg};border:1.5px solid ${pal.border};border-radius:12px;padding:12px 16px;cursor:pointer;width:100%;text-align:left;transition:all .15s`;
+    btn.style.cssText = `display:flex;align-items:center;gap:12px;background:${pal.bg};border:1.5px solid ${pal.border};border-radius:12px;padding:12px 16px;cursor:pointer;width:100%;text-align:left;transition:all .15s;margin-bottom:2px`;
     btn.onmouseover = () => btn.style.borderColor = pal.color;
     btn.onmouseout  = () => btn.style.borderColor = pal.border;
     if((col.niveles||[]).length > 1){
@@ -4880,17 +5022,19 @@ async function renderLoginCards(){
     }
     btn.innerHTML = `
       <div style="width:40px;height:40px;border-radius:50%;background:${pal.color};display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🏫</div>
-      <div style="flex:1">
-        <div style="font-size:14px;font-weight:700;color:${pal.color}">${col.nombre}</div>
-        <div style="display:flex;gap:4px;margin-top:4px;flex-wrap:wrap">${nivLabels}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:700;color:${pal.color};display:flex;align-items:center;gap:5px;flex-wrap:wrap">
+          ${col.nombre} ${ghBadge}
+        </div>
+        <div style="display:flex;gap:3px;margin-top:4px;flex-wrap:wrap">${nivLabels}</div>
       </div>
-      <div style="margin-left:auto;color:${pal.color};font-size:20px">›</div>`;
+      <div style="margin-left:auto;color:${pal.color};font-size:20px;flex-shrink:0">›</div>`;
     container.appendChild(btn);
   });
 
-  // Separador + botón nuevo colegio (solo visible para admin logueado o en pantalla login)
+  // ── Botón nuevo colegio ──
   const sep = document.createElement('div');
-  sep.style.cssText = 'border-top:1px solid #eee;margin-top:6px;padding-top:8px';
+  sep.style.cssText = 'border-top:1px solid #eee;margin-top:8px;padding-top:8px';
   const nuevoBtn = document.createElement('button');
   nuevoBtn.style.cssText = 'width:100%;padding:8px;background:none;border:1px dashed #DDE0E4;border-radius:8px;color:#aaa;font-size:12px;cursor:pointer;font-family:Nunito,sans-serif;transition:all .15s';
   nuevoBtn.textContent = '＋  Nuevo Colegio (solo administrador)';
@@ -4908,7 +5052,7 @@ function _loginMostrarNiveles(col, pal){
   const back = document.createElement('button');
   back.style.cssText = 'width:100%;padding:8px;background:none;border:1px solid #DDE0E4;border-radius:8px;color:#888;font-size:12px;cursor:pointer;margin-bottom:8px;font-family:Nunito,sans-serif';
   back.textContent = '← Volver';
-  back.onclick = () => renderLoginCards();
+  back.onclick = () => { _todosColegios=[]; renderLoginCards(); };
   container.appendChild(back);
   const title = document.createElement('div');
   title.style.cssText = `font-size:13px;font-weight:700;color:${pal.color};margin-bottom:8px;padding:0 4px`;
@@ -5090,6 +5234,7 @@ function loginElegirGrupo(){
 
 function loginVolverCards(){
   _loginUsuarioActual=null;
+  _todosColegios=[];  // forzar recarga de colegios
   document.getElementById('login-cards').style.display='flex';
   const _nivelWrap=document.getElementById('login-nivel-wrap');
   if(_nivelWrap) _nivelWrap.style.display='none';
@@ -5277,6 +5422,70 @@ async function loginInicioDirecto(){
   }
 }
 
+
+// ─── VERIFICAR VERSIÓN AL ABRIR ────────────────────────────
+async function _verificarVersionNueva(){
+  try{
+    // Solo verificar si estamos online y servidos desde un servidor (no file://)
+    if(!navigator.onLine) return;
+    if(window.location.protocol === 'file:') return;
+
+    // Fetch el propio index.html con cache-bust para obtener la versión del servidor
+    const url = window.location.href.split('?')[0].split('#')[0];
+    const res = await fetch(url + '?_chk=' + Date.now(), {
+      method: 'GET',
+      cache: 'no-store',
+      headers: {'Cache-Control': 'no-cache'}
+    });
+    if(!res.ok) return;
+    const txt = await res.text();
+
+    // Extraer versión del HTML descargado buscando la misma constante
+    const m = txt.match(/const APP_VERSION\s*=\s*'([^']+)'/);
+    if(!m) return;
+    const vServidor = m[1];
+
+    if(vServidor !== APP_VERSION){
+      // Hay versión nueva — mostrar banner de actualización
+      _mostrarBannerUpdate(vServidor);
+    }
+  }catch(e){
+    // Silencioso — si falla el fetch no molestamos al usuario
+  }
+}
+
+function _mostrarBannerUpdate(vNueva){
+  // Evitar mostrar el banner dos veces
+  if(document.getElementById('banner-update')) return;
+  const b = document.createElement('div');
+  b.id = 'banner-update';
+  b.style.cssText = [
+    'position:fixed', 'bottom:0', 'left:0', 'right:0', 'z-index:99999',
+    'background:#1F6FEB', 'color:#fff', 'padding:12px 16px',
+    'display:flex', 'align-items:center', 'justify-content:space-between',
+    'gap:10px', 'font-family:Rajdhani,sans-serif', 'font-size:14px',
+    'font-weight:700', 'box-shadow:0 -3px 16px rgba(0,0,0,.25)',
+    'animation:su .3s ease'
+  ].join(';');
+  b.innerHTML = `
+    <span>🆕 Nueva versión disponible: <strong>${vNueva}</strong> (tienes ${APP_VERSION})</span>
+    <div style="display:flex;gap:8px;flex-shrink:0">
+      <button onclick="actualizarApp()"
+        style="background:#fff;color:#1F6FEB;border:none;border-radius:8px;
+               padding:8px 16px;font-size:13px;font-weight:800;cursor:pointer;
+               font-family:Rajdhani,sans-serif">
+        🔄 Actualizar ahora
+      </button>
+      <button onclick="this.closest('#banner-update').remove()"
+        style="background:rgba(255,255,255,.2);color:#fff;border:none;
+               border-radius:8px;padding:8px 12px;font-size:13px;
+               font-weight:700;cursor:pointer;font-family:Rajdhani,sans-serif">
+        ✕
+      </button>
+    </div>`;
+  document.body.appendChild(b);
+}
+
 async function init(){
   // Ocultar barra de direcciones del navegador (múltiples intentos)
   const _hideBar=()=>{ try{ window.scrollTo(0,1); }catch(e){} };
@@ -5291,6 +5500,8 @@ async function init(){
   await _crearColegioEjemplo();
   // Renderizar tarjetas de colegios dinámicas en el login
   try { await renderLoginCards(); } catch(e){ console.warn('renderLoginCards:', e); }
+  // Verificar si hay versión nueva en el servidor (silencioso, no bloquea)
+  setTimeout(_verificarVersionNueva, 2000);
   // El nuevo login no necesita cargar usuarios dinamicamente
   setInterval(()=>{ if(_usuarioActual&&_agPendiente)autoguardarSilencioso(); },5*60*1000);
   window.addEventListener('beforeunload',()=>{ if(_usuarioActual&&_agPendiente)autoguardarSilencioso(); });
@@ -6271,31 +6482,12 @@ function scrollVisor(delta){
 
 (function(){
   if(!('serviceWorker' in navigator))return;
-  const swCode=`
-const C='cnm-v4';
-self.addEventListener('install',e=>{self.skipWaiting();});
-self.addEventListener('activate',e=>{
-  e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==C).map(k=>caches.delete(k)))));
-  self.clients.claim();
-});
-self.addEventListener('fetch',e=>{
-  const u=e.request.url;
-  if(u.includes('cdnjs')||u.includes('fonts.g')){
-    e.respondWith(caches.match(e.request).then(c=>{
-      return c||fetch(e.request).then(r=>{
-        const cl=r.clone();
-        caches.open(C).then(cache=>cache.put(e.request,cl));
-        return r;
-      }).catch(()=>c);
-    }));
-  }
-});`;
-  try{
-    const blob=new Blob([swCode],{type:'application/javascript'});
-    const url=URL.createObjectURL(blob);
-    navigator.serviceWorker.register(url,{scope:'./'})
-      .catch(()=>{});
-  }catch(e){}
+  // ── Desregistrar TODOS los SW viejos al cargar ──
+  // Esto garantiza que GitHub Pages siempre entregue el HTML actualizado
+  // sin quedar atrapado en caché del Service Worker anterior
+  navigator.serviceWorker.getRegistrations().then(regs=>{
+    regs.forEach(r=>r.unregister());
+  }).catch(()=>{});
 })();
 </script>
 <!-- ═══ MODAL PWA INSTALL AUTOMÁTICO ═══ -->
