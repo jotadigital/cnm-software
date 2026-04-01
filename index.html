@@ -3161,8 +3161,8 @@ async function onImportZip(e){
   });
 
   await new Promise(res=>{
-    document.getElementById('zip-ok-btn').addEventListener('click',()=>{ window._zipModalResult='ok'; res(); });
-    document.getElementById('zip-cancel-btn').addEventListener('click',()=>{ window._zipModalResult='cancel'; res(); });
+    overlay.querySelector('#zip-ok-btn').addEventListener('click',()=>{ window._zipModalResult='ok'; res(); });
+    overlay.querySelector('#zip-cancel-btn').addEventListener('click',()=>{ window._zipModalResult='cancel'; res(); });
   });
   overlay.remove();
   if(window._zipModalResult!=='ok') return;
@@ -3517,7 +3517,8 @@ async function importarSQLite(file){
           overlay.remove();
         });
       });
-      document.getElementById('import-dest-cancel').addEventListener('click',()=>{
+      const btnCancel = overlay.querySelector('#import-dest-cancel');
+      if(btnCancel) btnCancel.addEventListener('click',()=>{
         window._importDestIdx=-1; overlay.remove();
       });
       await new Promise(res=>{
@@ -4361,8 +4362,10 @@ async function refreshUI(){
   document.getElementById('tschool').textContent=nomTopbar;
   document.getElementById('sbinst').textContent=`${nomColegio}  ·  ${c.direccion||''}`;
   if(c.logo){
-    document.getElementById('logo-circle').innerHTML=`<img src="${c.logo}" alt="logo">`;
-    document.getElementById('llogo').innerHTML=`<img src="${c.logo}" style="width:70px;height:70px;object-fit:cover;border-radius:50%">`;
+    const elLogoCircle=document.getElementById('logo-circle');
+    if(elLogoCircle) elLogoCircle.innerHTML=`<img src="${c.logo}" alt="logo">`;
+    const elLlogo=document.getElementById('llogo');
+    if(elLlogo) elLlogo.innerHTML=`<img src="${c.logo}" style="width:70px;height:70px;object-fit:cover;border-radius:50%">`;
   }
   // Badge usuario activo
   const badge=document.getElementById('user-badge');
