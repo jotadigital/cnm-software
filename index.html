@@ -1541,7 +1541,7 @@ function openAdminDB(intento=1){
 }
 const txA=(st,m='readonly')=>dbAdmin.transaction(st,m).objectStore(st);
 const igetA=(st,k)=>new Promise(r=>txA(st).get(k).onsuccess=e=>r(e.target.result));
-const iputA=(st,o)=>new Promise(r=>{const t=dbAdmin.transaction(st,'readwrite');t.objectStore(st).put(o).onsuccess=e=>r(e.target.result)});
+const iputA=(st,o)=>new Promise((res,rej)=>{const t=dbAdmin.transaction(st,'readwrite');let lastKey;t.objectStore(st).put(o).onsuccess=e=>{lastKey=e.target.result};t.oncomplete=()=>res(lastKey);t.onerror=()=>rej(t.error||new Error('iputA transaction failed'));t.onabort=()=>rej(new Error('iputA transaction aborted'));});
 const idelA=(st,k)=>new Promise(r=>dbAdmin.transaction(st,'readwrite').objectStore(st).delete(k).onsuccess=()=>r());
 const iallA=(st)=>new Promise(r=>txA(st).getAll().onsuccess=e=>r(e.target.result));
 
@@ -5235,6 +5235,9 @@ async function guardarNuevoColegio(){
           nivel_clave: nivClave,
           esAdmin: false, creado: new Date().toISOString(),
         });
+        // ── Verificación B: confirmar que el usuario realmente quedó guardado ──
+        const verificado = await igetA('usuarios', uid);
+        if(!verificado) throw new Error(`Fallo al persistir usuario «${uName}» — intenta de nuevo`);
         usuariosCreados.push(uid);
       }
     }
@@ -5245,6 +5248,10 @@ async function guardarNuevoColegio(){
       niveles,
       creadoEn: new Date().toISOString(),
     });
+    // ── Verificación B: confirmar que el colegio realmente quedó guardado ──
+    const colegiosVerif = await _cargarColegiosDB();
+    if(!colegiosVerif.find(c => c.nombre === nombre))
+      throw new Error(`Fallo al persistir colegio «${nombre}» — intenta de nuevo`);
     OK(`✓ Colegio «${nombre}» creado con 3 niveles`);
     await _renderListaColegiosAdmin();
     // Recargar tarjetas del login
