@@ -544,6 +544,21 @@ textarea.fi{resize:none;min-height:75px}
       <button id="bnuevo" onclick="openFormProtegido(null)">＋ Nuevo</button>
       </div>
 
+      <!-- ── Filtro por curso ── -->
+      <div id="curso-filter-bar" style="display:flex;align-items:center;gap:8px;padding:6px 16px 8px;background:var(--bg2);border-bottom:1px solid var(--border)">
+        <span style="font-size:13px;color:var(--text3);white-space:nowrap;font-family:'Nunito',sans-serif">📚 Curso:</span>
+        <select id="curso-select"
+          onchange="cursoFiltro=this.value;buscar(document.getElementById('si').value)"
+          style="flex:1;min-width:0;padding:6px 10px;border:1.5px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);font-size:13px;font-family:'Rajdhani',sans-serif;font-weight:700;cursor:pointer;outline:none">
+          <option value="">📚 Todos los cursos</option>
+        </select>
+        <span id="curso-count-lbl" style="font-size:11px;color:#8B6914;font-family:'Rajdhani',sans-serif;font-weight:700;white-space:nowrap"></span>
+        <button onclick="cursoFiltro='';document.getElementById('curso-select').value='';document.getElementById('curso-count-lbl').textContent='';buscar(document.getElementById('si').value)"
+          title="Quitar filtro de curso"
+          style="background:none;border:none;color:var(--text3);font-size:16px;cursor:pointer;padding:2px 4px;border-radius:6px;line-height:1;flex-shrink:0"
+          onmouseover="this.style.color='#8B6914'" onmouseout="this.style.color='var(--text3)'">✕</button>
+      </div>
+
       <div id="tarea">
         <div class="thead">
           <div class="th">ID</div>
@@ -1650,8 +1665,12 @@ function fmtRut(raw){
 }
 
 // ─── ALUMNOS ──────────────────────────────────────
+let cursoFiltro=''; // curso seleccionado en el dropdown ('' = todos)
+
 async function getAll(q=''){
-  const all=(await iall('alumnos')).filter(a=>!a.deleted);
+  let all=(await iall('alumnos')).filter(a=>!a.deleted);
+  // Aplicar filtro de curso si hay uno seleccionado
+  if(cursoFiltro) all=all.filter(a=>(a.curso||'').toUpperCase().trim()===cursoFiltro.toUpperCase().trim());
   if(!q)return all;
   const ql=q.toLowerCase();
   // Normalizar RUT: quitar puntos y guión para comparar
@@ -1665,15 +1684,43 @@ async function getAll(q=''){
   });
 }
 
+async function poblarDropdownCursos(){
+  const all=(await iall('alumnos')).filter(a=>!a.deleted&&a.curso&&a.curso.trim()&&a.curso.toUpperCase()!=='EGRESADO');
+  const set=new Set(all.map(a=>a.curso.toUpperCase().trim()));
+  const cursos=[...set].sort();
+  const sel=document.getElementById('curso-select');
+  if(!sel)return;
+  // Mantener selección actual si sigue siendo válida
+  const prev=sel.value;
+  sel.innerHTML='<option value="">📚 Todos los cursos</option>';
+  cursos.forEach(c=>{
+    const op=document.createElement('option');
+    op.value=c; op.textContent=c;
+    if(c===prev) op.selected=true;
+    sel.appendChild(op);
+  });
+  // Mostrar contador en el label si hay filtro
+  const lbl=document.getElementById('curso-count-lbl');
+  if(lbl) lbl.textContent=cursoFiltro?`(${(await getAll(document.getElementById('si').value)).length} alumnos)`:'';
+}
+
 // ─── RENDER ───────────────────────────────────────
 async function buscar(q=''){
   const list=await getAll(q);
   const tb=document.getElementById('tbody');
   tb.innerHTML='';
   if(!list.length){
-    tb.innerHTML=`<div class="empty"><div class="ei">${q?'🔍':'🎓'}</div><p>${q?`Sin resultados para "${esc(q)}"`:
-    'No hay alumnos registrados.<br>Toca <b>＋ Nuevo</b> para agregar el primero.'}</p></div>`;
-    updStats();return;
+    let emptyMsg;
+    if(q||cursoFiltro){
+      emptyMsg='Sin resultados';
+      if(q) emptyMsg+=' para "'+esc(q)+'"';
+      if(cursoFiltro) emptyMsg+=' en curso <b>'+esc(cursoFiltro)+'</b>';
+    } else {
+      emptyMsg='No hay alumnos registrados.<br>Toca <b>＋ Nuevo</b> para agregar el primero.';
+    }
+    const emptyIcon=q||cursoFiltro?'🔍':'🎓';
+    tb.innerHTML='<div class="empty"><div class="ei">'+emptyIcon+'</div><p>'+emptyMsg+'</p></div>';
+    updStats();poblarDropdownCursos();return;
   }
   list.sort((a,b)=>(a.nombre||'').localeCompare(b.nombre||''));
   list.forEach(a=>{
@@ -1698,6 +1745,7 @@ async function buscar(q=''){
     tb.appendChild(r);
   });
   updStats();
+  poblarDropdownCursos();
 }
 
 function selRow(id){
